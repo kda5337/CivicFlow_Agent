@@ -18,9 +18,29 @@ def _load_rules() -> list[dict]:
         return yaml.safe_load(f)["rules"]
 
 
+def list_all_departments() -> list[str]:
+    """rules.yaml의 담당부서 규칙들이 가리키는 부서명을 전부 모아 정렬해서 돌려준다.
+
+    담당자가 AI 분류 결과의 담당부서가 틀렸다고 판단했을 때, 화면에서 고를 수 있는
+    선택지 전체를 rules.yaml 하나로만 관리하기 위한 용도(프론트에서 하드코딩하지 않음).
+    """
+    departments = {
+        rule["result"]["담당부서"]
+        for rule in _load_rules()
+        if "담당부서" in rule.get("result", {})
+    }
+    return sorted(departments)
+
+
 def rules_node(state: InquiryState) -> dict:
-    """9절: Rule 엔진 노드. classification.문의유형으로 규칙 후보군을 좁힌 뒤,
+    """9절: Rule 엔진 노드. classification.주요문의유형으로 규칙 후보군을 좁힌 뒤,
     키워드 매칭으로 담당부서/우선순위를 보정한다.
+
+    classify_node는 문의 하나가 여러 유형에 해당할 수 있어 문의유형들(전체 후보)과
+    주요문의유형(대표 유형 하나)을 함께 내놓는데, 이 노드는 여전히 주요문의유형
+    하나만 보고 라우팅한다 — 여러 후보 중 무엇이 대표인지는 이미 classify_node에서
+    LLM이 정한 뒤라, rules_node 로직 자체는 문의유형이 단일 값이던 때와 동일하다.
+    최종 출력에서는 하위 호환을 위해 주요문의유형을 문의유형 키로 옮겨 담는다.
 
     - 담당부서/우선순위는 LLM(classify_node)이 정하지 않는다 — 여기서 rules.yaml만으로
       처음부터 결정한다. 문의유형마다 keywords 없는 기본(fallback) 규칙이 하나씩 있어서
@@ -41,7 +61,7 @@ def rules_node(state: InquiryState) -> dict:
     """
     text = state["raw_text"]
     before = dict(state.get("classification") or {})
-    문의유형 = before.get("문의유형")
+    문의유형 = before.get("주요문의유형")
 
     with get_langfuse_client().start_as_current_observation(
         name="apply-rules",
@@ -49,6 +69,7 @@ def rules_node(state: InquiryState) -> dict:
         input={"classification_before": before},
     ) as span:
         classification = dict(before)
+        classification["문의유형"] = classification.pop("주요문의유형", None)
         matched_rules: list[str] = []
         requires_manager_review = False
         review_reasons: list[str] = []  # 관리자검토필요를 실제로 세팅한 규칙 이름만 모음

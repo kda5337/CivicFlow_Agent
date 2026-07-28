@@ -1,9 +1,33 @@
+import { useEffect, useState } from 'react'
 import { priorityBadgeClass } from '../priorityBadge.js'
+
+const DEPARTMENTS_URL = 'http://localhost:8000/departments'
 
 // 실제 classify_node + rules_node 결과(state.classification, state.rule_flags)를
 // 그대로 보여준다. 목업에 있던 "분류 신뢰도"(가짜 91% 수치)는 실제 API에 없는
 // 값이라, 대신 실제로 존재하는 감정상태/핵심요청/분류근거로 대체했다.
-export default function AnalysisView({ result, onNext }) {
+//
+// 담당부서는 AI(rules_node)가 정한 값을 기본으로 보여주되, 담당자가 잘못됐다고
+// 판단하면 rules.yaml에 있는 부서 전체를 버튼(칩)으로 골라 직접 고칠 수 있다.
+// 고친 값은 App.jsx의 result 상태에 바로 반영되므로, 다른 단계로 갔다가 돌아와도
+// 유지된다.
+export default function AnalysisView({
+  result,
+  onNext,
+  onPrev,
+  onDepartmentChange,
+  originalDepartment,
+  departmentOverridden,
+}) {
+  const [departments, setDepartments] = useState([])
+
+  useEffect(() => {
+    fetch(DEPARTMENTS_URL)
+      .then((response) => response.json())
+      .then(setDepartments)
+      .catch(() => setDepartments([]))
+  }, [])
+
   if (!result || !result.classification) {
     return (
       <div className="view" id="view-analysis">
@@ -27,12 +51,36 @@ export default function AnalysisView({ result, onNext }) {
         <div className="card">
           <h2 className="section-title">분류 결과</h2>
           <div className="result-row">
-            <span className="result-key">문의 유형</span>
+            <span className="result-key">문의 유형(대표)</span>
             <span className="result-val">{classification.문의유형}</span>
           </div>
           <div className="result-row">
-            <span className="result-key">담당 부서</span>
-            <span className="result-val">{classification.담당부서}</span>
+            <span className="result-key">문의 유형(전체)</span>
+            <span className="result-val">
+              {classification.문의유형들 && classification.문의유형들.length
+                ? classification.문의유형들.join(', ')
+                : classification.문의유형}
+            </span>
+          </div>
+          <div className="result-row" style={{ alignItems: 'flex-start', flexDirection: 'column', gap: 8 }}>
+            <span className="result-key">담당 부서 (틀렸다면 아래에서 직접 선택)</span>
+            <div className="dept-picker">
+              {(departments.length ? departments : [classification.담당부서]).map((dept) => (
+                <button
+                  key={dept}
+                  type="button"
+                  className={`dept-chip${dept === classification.담당부서 ? ' active' : ''}`}
+                  onClick={() => onDepartmentChange(dept)}
+                >
+                  {dept}
+                </button>
+              ))}
+            </div>
+            {departmentOverridden && (
+              <div className="dept-override-note">
+                담당자가 수동으로 수정함 (AI 원래 분류: {originalDepartment})
+              </div>
+            )}
           </div>
           <div className="result-row">
             <span className="result-key">담당부서 후보</span>
@@ -81,6 +129,9 @@ export default function AnalysisView({ result, onNext }) {
       </div>
 
       <div className="form-actions">
+        <button className="btn btn-ghost" type="button" onClick={onPrev}>
+          ← 이전 단계: 문의 접수
+        </button>
         <button className="btn btn-primary" type="button" onClick={onNext}>
           다음 단계: RAG 검색 결과 →
         </button>

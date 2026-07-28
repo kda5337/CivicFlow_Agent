@@ -12,6 +12,8 @@ class InquiryState(TypedDict, total=False):
     raw_text: str
     received_at: str
 
+    cache_hit: bool  # query_cache에서 유사한 과거 문의를 찾아 재사용했는지 여부
+
     relevance_check: dict  # RelevanceCheckResult.model_dump()
     intake_reply: str  # 발랄한 페르소나로 생성한 재질문 요청/환영+요약 답변
 
@@ -20,5 +22,6 @@ class InquiryState(TypedDict, total=False):
 
     retrieved_docs: list[dict]  # [{"content", "source", "score"}, ...]
     draft_answer: Optional[str]
+    sources: list[str]  # 답변 본문과 분리된, 화면에 그대로(수정 불가) 보여줄 출처 라벨 목록
 
     status: str  # "pending_review" | "urgent_manager_review" | "irrelevant_input"

@@ -39,12 +39,12 @@ def _friendly_source_label(source: str) -> str:
     return source
 
 
-def _format_sources_footer(retrieved_docs: list[dict]) -> str:
-    """LLM이 아닌 코드가 직접 만드는 출처 목록. 답변 본문에 없는 근거를 지어내거나
-    실제로 참고한 근거를 누락하는 일이 없도록, retrieved_docs를 그대로 순회해 만든다."""
-    if not retrieved_docs:
-        return ""
+def _friendly_sources(retrieved_docs: list[dict]) -> list[str]:
+    """LLM이 아닌 코드가 직접 만드는, 중복 제거된 출처 라벨 목록.
 
+    답변 본문과 분리된 별도 값이다 — 화면에서 수정 가능한 텍스트(답변 본문)에 섞어
+    넣지 않고, 그 자체로 수정 불가능한 요소로 그대로 보여주기 위한 것이다.
+    """
     labels = []
     seen = set()
     for doc in retrieved_docs:
@@ -52,28 +52,44 @@ def _format_sources_footer(retrieved_docs: list[dict]) -> str:
         if label not in seen:
             seen.add(label)
             labels.append(label)
-
-    bullet_list = "\n".join(f"- {label}" for label in labels)
-    return f"\n\n---\n참고 자료:\n{bullet_list}"
+    return labels
 
 
-def generate_node(state: InquiryState) -> dict:
-    """답변 초안 생성 노드. 분류 결과 + RAG 근거를 결합해 초안을 만든다."""
+def build_draft_answer(raw_text: str, classification: dict, docs: list[dict]) -> tuple[str, list[str]]:
+    """(답변 본문, 출처 라벨 목록)을 만든다. 답변 본문에는 출처를 섞어 넣지 않는다.
+
+    generate_node(자동 생성, 문서 1건)와 담당자가 RAG 검색 결과 화면에서 직접 고른
+    문서(들)로 다시 만드는 수동 재생성 엔드포인트가 이 함수를 공유한다 — 근거로 쓸
+    문서가 몇 건이든 이 함수는 그대로 받아 처리하고, "몇 건을 근거로 쓸지"는 호출하는
+    쪽이 결정한다.
+    """
     llm = get_llm(temperature=0.3)
-    classification = state.get("classification") or {}
-    retrieved_docs = state.get("retrieved_docs", [])
-
     prompt = GENERATE_PROMPT.format(
-        text=state["raw_text"],
+        text=raw_text,
         문의유형=classification.get("문의유형", "미분류"),
         우선순위=classification.get("우선순위", "보통"),
         담당부서=classification.get("담당부서", "미배정"),
-        context=_format_context(retrieved_docs),
+        context=_format_context(docs),
     )
-
     response = llm.invoke(prompt)
-    draft_answer = response.content + _format_sources_footer(retrieved_docs)
+    return response.content, _friendly_sources(docs)
+
+
+def generate_node(state: InquiryState) -> dict:
+    """답변 초안 생성 노드. 분류 결과 + RAG 근거를 결합해 초안을 만든다.
+
+    retrieve_node는 이제 유사도 상위 RAG_TOP_K(현재 3)건을 전부 state["retrieved_docs"]에
+    담아 RAG 검색 결과 화면에서 다 보여주지만, 자동 생성 시점에는 아직 가장 유사도가
+    높은 1건만 근거로 쓴다 — 2·3순위 문서를 함께 근거로 섞으면 실제로 답변 품질이
+    좋아지는지 아직 검증 전이라, 우선 기존과 동일한 단일 근거 문서 방식을 유지한다.
+    담당자가 RAG 검색 결과 화면에서 다른 문서(들)를 직접 골라 재생성하고 싶다면
+    /inquiries/regenerate-answer가 build_draft_answer를 문서 제한 없이 호출한다.
+    """
+    classification = state.get("classification") or {}
+    retrieved_docs = state.get("retrieved_docs", [])
+    draft_answer, sources = build_draft_answer(state["raw_text"], classification, retrieved_docs[:1])
     return {
         "draft_answer": draft_answer,
+        "sources": sources,
         "status": "pending_review",
     }

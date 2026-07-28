@@ -5,7 +5,13 @@ from langfuse import propagate_attributes
 
 from app.core.tracing import get_langfuse_client, get_langfuse_handler
 from app.graph.build import get_compiled_graph
-from app.models.schemas import InquiryRequest, InquiryResponse
+from app.graph.nodes.generate import build_draft_answer
+from app.models.schemas import (
+    InquiryRequest,
+    InquiryResponse,
+    RegenerateAnswerRequest,
+    RegenerateAnswerResponse,
+)
 
 router = APIRouter(prefix="/inquiries", tags=["inquiries"])
 
@@ -59,3 +65,16 @@ def create_inquiry(payload: InquiryRequest) -> InquiryResponse:
     langfuse.flush()
 
     return InquiryResponse(**final_state, trace_url=trace_url)
+
+
+@router.post("/regenerate-answer", response_model=RegenerateAnswerResponse)
+def regenerate_answer(payload: RegenerateAnswerRequest) -> RegenerateAnswerResponse:
+    """담당자가 RAG 검색 결과 화면에서 문서(1개 또는 여러 개)를 직접 골라 답변 초안을
+    다시 만든다. intake/classify/apply_rules/retrieve는 이미 끝난 뒤라 다시 돌 필요가
+    없어서, generate 단계만 다시 실행한다(전체 파이프라인 재실행 대비 훨씬 빠르다)."""
+    draft_answer, sources = build_draft_answer(
+        payload.raw_text,
+        payload.classification,
+        [doc.model_dump() for doc in payload.docs],
+    )
+    return RegenerateAnswerResponse(draft_answer=draft_answer, sources=sources)

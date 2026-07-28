@@ -5,7 +5,8 @@ from app.models.schemas import LLMClassification
 
 
 def classify_node(state: InquiryState) -> dict:
-    """7절: LLM 유형 분류 노드. 문의유형/핵심요청/감정상태만 구조화된 JSON으로 분류한다.
+    """7절: LLM 유형 분류 노드. 문의유형들(해당되는 유형 전부)/주요문의유형(대표 유형)/
+    핵심요청/감정상태를 구조화된 JSON으로 분류한다.
 
     담당부서/우선순위는 여기서 정하지 않는다 — rules_node가 rules.yaml만으로 채운다.
     """
