@@ -23,11 +23,18 @@ export const VIEW_STEP_MAP = {
   kb: -1,
 }
 
-// 문의 처리 화면들을 순서대로 두어, "다음 단계" 버튼이 항상 정확한 다음 화면으로
-// 이동하게 한다(draft가 마지막이라 다음 단계가 없음 -> null).
+// 문의 처리 화면들을 순서대로 두어, "다음 단계"/"이전 단계" 버튼이 항상 정확한
+// 화면으로 이동하게 한다(draft가 마지막이라 다음 단계가 없고, intake가 처음이라
+// 이전 단계가 없음 -> 각각 null).
 const PIPELINE_VIEW_ORDER = ['intake', 'analysis', 'rag', 'draft']
 export function nextPipelineView(currentKey) {
   const index = PIPELINE_VIEW_ORDER.indexOf(currentKey)
   if (index === -1 || index === PIPELINE_VIEW_ORDER.length - 1) return null
   return PIPELINE_VIEW_ORDER[index + 1]
+}
+
+export function previousPipelineView(currentKey) {
+  const index = PIPELINE_VIEW_ORDER.indexOf(currentKey)
+  if (index <= 0) return null
+  return PIPELINE_VIEW_ORDER[index - 1]
 }

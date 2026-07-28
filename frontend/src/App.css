@@ -179,6 +179,15 @@ textarea{ resize:vertical; min-height:120px; line-height:1.6; }
 .result-key{ font-size:12.5px; color:var(--text-dim); font-weight:500; }
 .result-val{ font-size:13.5px; font-weight:700; color:var(--navy-800); }
 .kw{ display:inline-block; background:var(--teal-soft); color:var(--teal); font-size:11.5px; font-weight:600; padding:3px 8px; border-radius:6px; margin:3px 4px 0 0; }
+.dept-picker{ display:flex; flex-wrap:wrap; gap:6px; margin-top:8px; }
+.dept-chip{
+  font-size:11.5px; font-weight:600; padding:5px 11px; border-radius:999px;
+  border:1px solid var(--line); background:#fff; color:var(--text-dim); cursor:pointer;
+  transition:all .15s ease; font-family:'Pretendard';
+}
+.dept-chip:hover{ border-color:var(--teal); color:var(--teal); }
+.dept-chip.active{ background:var(--teal-soft); border-color:var(--teal); color:var(--navy-800); font-weight:700; }
+.dept-override-note{ font-size:11px; color:var(--amber); margin-top:6px; }
 .rule-trace{ font-family:var(--mono); font-size:11.5px; color:var(--text-dim); background:var(--bg); border-radius:8px; padding:12px 14px; line-height:1.9; margin-top:10px; }
 .rule-trace .arrow{ color:var(--teal); margin:0 6px; }
 
@@ -188,7 +197,22 @@ textarea{ resize:vertical; min-height:120px; line-height:1.6; }
 .rag-source{ font-size:11.5px; font-weight:700; color:var(--teal); font-family:var(--mono); }
 .rag-score{ font-size:11px; color:var(--text-dim); font-family:var(--mono); white-space:nowrap; }
 .rag-body{ font-size:13px; line-height:1.65; color:var(--text); white-space:pre-wrap; }
+.rag-item-selectable{ display:block; cursor:pointer; transition:border-color .15s ease, background .15s ease; }
+.rag-item-selectable:hover{ border-color:var(--teal); }
+.rag-item-selectable.selected{ border-color:var(--teal); background:var(--teal-soft); }
 .rag-meta{ margin-top:9px; font-size:11px; color:var(--text-dim); }
+
+/* 답변 초안의 참고 자료 — 텍스트에어리어와 분리된 읽기 전용 블록 */
+.sources-readonly{
+  margin-top:10px; padding:10px 14px; border-radius:9px;
+  background:var(--bg); border:1px solid var(--line);
+}
+.sources-readonly-label{
+  font-size:11px; font-weight:700; color:var(--text-dim);
+  text-transform:uppercase; letter-spacing:.03em; margin-bottom:6px;
+}
+.sources-readonly ul{ margin:0; padding-left:18px; }
+.sources-readonly li{ font-size:12.5px; color:var(--text); line-height:1.7; }
 
 /* draft editor */
 .editor-wrap{ display:grid; grid-template-columns:1fr 260px; gap:18px; }

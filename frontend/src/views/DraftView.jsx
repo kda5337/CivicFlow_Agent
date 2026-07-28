@@ -5,7 +5,7 @@ import { useEffect, useState } from 'react'
 // 안에서만 저장 상태를 표시한다(새로고침하면 사라짐) — 서버에 실제로 저장되는
 // 것처럼 보이지 않도록 문구로 명시한다. "AI 재생성 요청"은 같은 원문으로
 // 파이프라인을 다시 호출하는 실제 동작이다.
-export default function DraftView({ result, onRegenerate, loading }) {
+export default function DraftView({ result, onRegenerate, loading, onPrev, answerSourceDocs, sources }) {
   const [draftText, setDraftText] = useState('')
   const [saved, setSaved] = useState(false)
 
@@ -36,6 +36,10 @@ export default function DraftView({ result, onRegenerate, loading }) {
   // 바로 이 화면의 목적이기 때문).
   const requiresReview = Boolean(result.rule_flags?.requires_manager_review)
   const docs = result.retrieved_docs || []
+  // RAG 검색은 유사도 상위 몇 건을 다 찾아오지만(docs), 실제로 이 답변을 만드는 데
+  // 근거로 쓰인 건 그중 일부(기본은 1위 1건, 담당자가 RAG 화면에서 직접 고르면 그 문서들)
+  // 뿐이다 — 그 실제 근거 목록이 answerSourceDocs다.
+  const sourceDocs = answerSourceDocs && answerSourceDocs.length ? answerSourceDocs : docs.slice(0, 1)
   const edited = draftText !== (result.draft_answer || result.intake_reply || '')
 
   return (
@@ -62,7 +66,20 @@ export default function DraftView({ result, onRegenerate, loading }) {
               setSaved(false)
             }}
           />
+          {sources && sources.length > 0 && (
+            <div className="sources-readonly">
+              <div className="sources-readonly-label">참고 자료 (수정 불가)</div>
+              <ul>
+                {sources.map((label) => (
+                  <li key={label}>{label}</li>
+                ))}
+              </ul>
+            </div>
+          )}
           <div className="form-actions">
+            <button className="btn btn-ghost" type="button" onClick={onPrev}>
+              ← 이전 단계: RAG 검색 결과
+            </button>
             <button className="btn btn-ghost" type="button" onClick={onRegenerate} disabled={loading}>
               {loading ? '재생성 중...' : 'AI 재생성 요청'}
             </button>
@@ -77,7 +94,8 @@ export default function DraftView({ result, onRegenerate, loading }) {
             <div className="rev-time">{result.status}</div>
             <div className="rev-actor">AI 초안 생성</div>
             <div style={{ color: 'var(--text-dim)' }}>
-              근거 문서 {docs.length}건 기반 자동 생성
+              근거 문서 {sourceDocs.length}건 기반 생성
+              {sources && sources.length > 0 && <> ({sources.join(', ')})</>}
             </div>
           </div>
           {edited && (

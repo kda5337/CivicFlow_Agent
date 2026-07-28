@@ -46,7 +46,7 @@ def run_pipeline(text: str) -> None:
     before = classify_result["classification"]
     print(
         "  [classify]    "
-        f"문의유형={before['문의유형']} / 감정상태={before['감정상태']} ")
+        f"주요문의유형={before['주요문의유형']} (문의유형들={before['문의유형들']}) / 감정상태={before['감정상태']} ")
 
     rules_result = rules_node(state)
     after = rules_result["classification"]

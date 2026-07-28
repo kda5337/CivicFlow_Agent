@@ -23,7 +23,7 @@ class Settings(BaseSettings):
 
     # 컬렉션 이름은 여기서 관리하지 않는다 — 각 ingest/조회 코드가 호출 시점에 직접 정한다.
     chroma_persist_dir: str = str(_BACKEND_DIR / "chroma_db")
-    rag_top_k: int = 1
+    rag_top_k: int = 3
 
     # 졸업요건/교육과정 문의를 SQL로 직접 조회하는 데 쓰는 Supabase(Postgres) 연결.
     supabase_database_url: str = ""

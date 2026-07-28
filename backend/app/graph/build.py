@@ -2,6 +2,7 @@ from functools import lru_cache
 
 from langgraph.graph import END, START, StateGraph
 
+from app.graph.nodes.cache import check_cache_node, store_cache_node
 from app.graph.nodes.classify import classify_node
 from app.graph.nodes.generate import generate_node
 from app.graph.nodes.intake import intake_node
@@ -9,6 +10,13 @@ from app.graph.nodes.intake_reply import greet_node, reject_node
 from app.graph.nodes.retrieve import retrieve_node
 from app.graph.nodes.rules import rules_node
 from app.graph.state import InquiryState
+
+
+def _route_after_cache(state: InquiryState) -> str:
+    """캐시에 유사한 과거 문의가 있으면(cache_hit) intake~generate를 전부 건너뛴다."""
+    if state.get("cache_hit"):
+        return "hit"
+    return "miss"
 
 
 def _route_after_intake(state: InquiryState) -> str:
@@ -30,9 +38,15 @@ def get_compiled_graph():
     '관리자 검토가 필요하다'는 신호 자체는 이 분기와 무관하게 apply_rules가 채우는
     rule_flags.requires_manager_review/review_reasons로 계속 전달되므로, 화면에서
     이 문의를 우선 검토 대상으로 표시하는 데는 지장이 없다.
+
+    맨 앞의 check_cache가 query_cache에서 유사한 과거 문의를 찾으면(HIT) 그 결과를
+    그대로 반환하고 intake~generate를 전부 건너뛴다. 못 찾으면(MISS) 기존 흐름을
+    그대로 타고, generate 이후 store_cache가 이번 결과를 다음 재질문을 위해 저장한다
+    (관리자검토필요였던 결과는 store_cache_entry가 알아서 저장을 건너뛴다).
     """
     graph = StateGraph(InquiryState)
 
+    graph.add_node("check_cache", check_cache_node)
     graph.add_node("intake", intake_node)
     graph.add_node("reject", reject_node)
     graph.add_node("greet", greet_node)
@@ -40,8 +54,14 @@ def get_compiled_graph():
     graph.add_node("apply_rules", rules_node)
     graph.add_node("retrieve", retrieve_node)
     graph.add_node("generate", generate_node)
+    graph.add_node("store_cache", store_cache_node)
 
-    graph.add_edge(START, "intake")
+    graph.add_edge(START, "check_cache")
+    graph.add_conditional_edges(
+        "check_cache",
+        _route_after_cache,
+        {"hit": END, "miss": "intake"},
+    )
     graph.add_conditional_edges(
         "intake",
         _route_after_intake,
@@ -52,6 +72,7 @@ def get_compiled_graph():
     graph.add_edge("classify", "apply_rules")
     graph.add_edge("apply_rules", "retrieve")
     graph.add_edge("retrieve", "generate")
-    graph.add_edge("generate", END)
+    graph.add_edge("generate", "store_cache")
+    graph.add_edge("store_cache", END)
 
     return graph.compile()

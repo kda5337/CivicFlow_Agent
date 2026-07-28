@@ -9,18 +9,20 @@ init_tracing()
 from fastapi import FastAPI  # noqa: E402
 from fastapi.middleware.cors import CORSMiddleware  # noqa: E402
 
+from app.api.routers.departments import router as departments_router  # noqa: E402
 from app.api.routers.inquiries import router as inquiries_router  # noqa: E402
 
 app = FastAPI(title="CivicFlow Agent API")
 
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["http://localhost:5173", "http://localhost:3000"],
+    allow_origins=["http://localhost:5173", "http://localhost:5174", "http://localhost:3000"],
     allow_methods=["*"],
     allow_headers=["*"],
 )
 
 app.include_router(inquiries_router)
+app.include_router(departments_router)
 
 
 @app.on_event("shutdown")
