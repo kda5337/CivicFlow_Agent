@@ -14,7 +14,6 @@ const DEPARTMENTS_URL = 'http://localhost:8000/departments'
 export default function AnalysisView({
   result,
   onNext,
-  onPrev,
   onDepartmentChange,
   originalDepartment,
   departmentOverridden,
@@ -28,13 +27,34 @@ export default function AnalysisView({
       .catch(() => setDepartments([]))
   }, [])
 
-  if (!result || !result.classification) {
+  if (!result) {
     return (
       <div className="view" id="view-analysis">
         <div className="card empty-state">
           아직 분석된 문의가 없습니다.
           <br />
-          '문의 접수' 화면에서 문의를 등록해 주세요.
+          '문의 접수함'에서 문의를 선택해 "AI 처리 →"를 눌러 주세요.
+        </div>
+      </div>
+    )
+  }
+
+  if (!result.classification) {
+    // relevance_check.관련여부가 false면 intake에서 재질문 요청으로 끝나 분류 자체가
+    // 없다 — "아직 처리 안 함"이 아니라 "처리했지만 대상 아님으로 판단함"이므로 구분해서 보여준다.
+    const reason = result.relevance_check?.판단근거
+    return (
+      <div className="view" id="view-analysis">
+        <div className="card empty-state">
+          AI가 이 문의를 처리 대상(민원·문의)이 아니라고 판단해 분류하지 않았습니다.
+          {reason && (
+            <>
+              <br />
+              판단 근거: {reason}
+            </>
+          )}
+          <br />
+          실제로 처리가 필요한 문의라면 담당자가 직접 분류/답변해 주세요.
         </div>
       </div>
     )
@@ -108,7 +128,10 @@ export default function AnalysisView({
 
         <div className="card">
           <h2 className="section-title">분류 근거</h2>
-          <div style={{ fontSize: 12.5, color: 'var(--text-dim)', marginBottom: 6 }}>핵심 요청</div>
+          <div style={{ fontSize: 12.5, color: 'var(--text-dim)', marginBottom: 6 }}>사용자 입력</div>
+          <div style={{ fontSize: 13.5, whiteSpace: 'pre-wrap' }}>{result.raw_text}</div>
+
+          <div style={{ fontSize: 12.5, color: 'var(--text-dim)', margin: '14px 0 6px' }}>핵심 요청</div>
           <div style={{ fontSize: 13.5 }}>{classification.핵심요청}</div>
 
           <div style={{ fontSize: 12.5, color: 'var(--text-dim)', margin: '14px 0 4px' }}>LLM 분류 근거</div>
@@ -129,9 +152,6 @@ export default function AnalysisView({
       </div>
 
       <div className="form-actions">
-        <button className="btn btn-ghost" type="button" onClick={onPrev}>
-          ← 이전 단계: 문의 접수
-        </button>
         <button className="btn btn-primary" type="button" onClick={onNext}>
           다음 단계: RAG 검색 결과 →
         </button>

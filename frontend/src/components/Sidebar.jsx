@@ -1,5 +1,5 @@
 import { VIEWS } from '../viewsConfig.js'
-import { ICONS_BY_VIEW } from './icons.jsx'
+import { ExternalLinkIcon, ICONS_BY_VIEW } from './icons.jsx'
 
 function groupBy(views) {
   const groups = []
@@ -47,6 +47,16 @@ export default function Sidebar({ activeView, onNavigate }) {
           })}
         </div>
       ))}
+
+      <a
+        className="sidebar-public-link"
+        href="/submit"
+        target="_blank"
+        rel="noreferrer"
+      >
+        <ExternalLinkIcon />
+        <span>사용자 접수 페이지 열기</span>
+      </a>
 
       <div className="sidebar-foot">
         LangGraph StateGraph 기반

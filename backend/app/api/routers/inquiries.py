@@ -1,11 +1,15 @@
 import uuid
 
-from fastapi import APIRouter
+import psycopg2
+from fastapi import APIRouter, HTTPException
 from langfuse import propagate_attributes
 
+from app.api.routers.submissions import _COLUMNS, _row_to_submission
+from app.core.config import get_settings
 from app.core.tracing import get_langfuse_client, get_langfuse_handler
 from app.graph.build import get_compiled_graph
-from app.graph.nodes.generate import build_draft_answer
+from app.graph.nodes.generate import build_draft_answer, generate_node
+from app.graph.nodes.retrieve import retrieve_node
 from app.models.schemas import (
     InquiryRequest,
     InquiryResponse,
@@ -14,6 +18,60 @@ from app.models.schemas import (
 )
 
 router = APIRouter(prefix="/inquiries", tags=["inquiries"])
+
+
+def _fetch_submission(submission_id: str) -> dict:
+    settings = get_settings()
+    conn = psycopg2.connect(settings.supabase_database_url)
+    try:
+        with conn.cursor() as cur:
+            cur.execute(f"SELECT {_COLUMNS} FROM citizen_submissions WHERE id = %s", (submission_id,))
+            row = cur.fetchone()
+    finally:
+        conn.close()
+    if not row:
+        raise HTTPException(status_code=404, detail="submission not found")
+    return _row_to_submission(row)
+
+
+def _process_from_submission(inquiry_id: str, submission_id: str) -> dict:
+    """문의 접수함에서 'AI 처리'로 넘어온 건을 처리한다.
+
+    intake(관련성 판별)와 classify_node+rules_node(문의유형/담당부서/우선순위/감정상태/
+    핵심요청/분류근거/규칙 매칭 경로 분류)는 사용자가 /submit으로 접수한 시점에 이미
+    한 번 실행되어 citizen_submissions에 저장돼 있다 — 이미 검증된 결과를 LLM으로 다시
+    판단시키는 대신 그 값을 그대로 가져와 담당자에게 "확인차" 보여주고, 아직 하지 않은
+    RAG 근거 검색 + 답변 초안 생성만 수행한다. core_request/classification_reason/
+    matched_rules가 없는(이 기능 도입 이전에 접수된) 오래된 건은 안내문/빈 배열로 대신한다.
+    """
+    submission = _fetch_submission(submission_id)
+
+    classification = {
+        "문의유형": submission.inquiry_type,
+        "문의유형들": submission.inquiry_types,
+        "핵심요청": submission.core_request or submission.raw_text,
+        "감정상태": submission.emotion,
+        "우선순위": submission.priority,
+        "담당부서": submission.department,
+        "분류근거": submission.classification_reason
+        or "사용자용 문의 접수 페이지에서 접수 시점에 이미 자동 분류된 결과입니다.",
+    }
+    rule_flags = {
+        "matched_rules": submission.matched_rules,
+        "candidate_departments": submission.candidate_departments,
+        "requires_manager_review": submission.requires_manager_review,
+        "review_reasons": [],
+    }
+
+    state = {
+        "inquiry_id": inquiry_id,
+        "raw_text": submission.raw_text,
+        "classification": classification,
+        "rule_flags": rule_flags,
+    }
+    state.update(retrieve_node(state))
+    state.update(generate_node(state))
+    return state
 
 
 @router.post("", response_model=InquiryResponse)
@@ -41,10 +99,17 @@ def create_inquiry(payload: InquiryRequest) -> InquiryResponse:
             tags=["civicflow-agent", "inquiry-pipeline"],
             trace_name="process-inquiry",
         ):
-            final_state = get_compiled_graph().invoke(
-                {"inquiry_id": inquiry_id, "raw_text": payload.text},
-                config={"callbacks": [get_langfuse_handler()]},
-            )
+            if payload.submission_id:
+                final_state = _process_from_submission(inquiry_id, payload.submission_id)
+            else:
+                final_state = get_compiled_graph().invoke(
+                    {
+                        "inquiry_id": inquiry_id,
+                        "raw_text": payload.text,
+                        "skip_relevance_check": payload.skip_relevance_check,
+                    },
+                    config={"callbacks": [get_langfuse_handler()]},
+                )
 
         root_span.update(
             output={

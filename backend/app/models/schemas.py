@@ -76,6 +76,82 @@ class RetrievedDoc(BaseModel):
 
 class InquiryRequest(BaseModel):
     text: str
+    skip_relevance_check: bool = Field(
+        default=False,
+        description="사용자용 문의 접수 페이지를 거쳐 이미 분류된 문의를 '문의 접수함'에서 다시 AI 처리할 때 True. "
+        "intake의 관련여부 판별(별도 LLM 호출)이 최초 분류와 엇갈려 재처리가 막히는 것을 방지한다.",
+    )
+    submission_id: Optional[str] = Field(
+        default=None,
+        description="문의 접수함에서 'AI 처리'로 넘어온 citizen_submissions 원본 건 id. 있으면 "
+        "intake/classify/apply_rules를 다시 돌리지 않고, 그 원본 건에 이미 저장된 분류 결과(문의 "
+        "등록 시점에 classify_node+rules_node가 이미 검증해 둔 것)를 그대로 가져와 RAG 검색+답변 "
+        "생성만 수행한다.",
+    )
+
+
+class CitizenSubmissionRequest(BaseModel):
+    """사용자용 문의 접수 페이지(/submit)에서 보내는 요청. AI 처리는 하지 않고
+    citizen_submissions 테이블에 그대로 저장만 한다."""
+
+    name: str
+    contact: str
+    raw_text: str
+
+
+class CitizenSubmission(BaseModel):
+    """담당자용 문의 접수함 목록 / 사용자용 문의 유형 자동 확인·처리 상태 조회·
+    답변 확인·내 문의 내역이 전부 함께 쓰는 항목 하나.
+
+    접수(INSERT) 직후 서버가 바로 classify_node+rules_node를 돌려 inquiry_type
+    이하 필드를 채우고 status를 '검토중'으로 바꾼다(RAG 검색·답변 생성은 아직 안 함).
+    이후 담당자가 내부 화면에서 실제 답변까지 만들어 확정하면 final_answer가 채워지고
+    status가 '답변완료'가 된다. 문의유형/담당부서를 담당자가 내부에서 고쳤다면 그 결과가
+    이 레코드에도 다시 반영된다(사용자 페이지에는 결과만 보이고 수정 버튼은 없다).
+    """
+
+    id: str
+    name: str
+    contact: str
+    raw_text: str
+    submitted_at: str
+    status: str = "접수완료"
+    inquiry_type: Optional[str] = Field(default=None, description="주요문의유형")
+    inquiry_types: list[str] = Field(default_factory=list, description="문의유형들(해당되는 유형 전체)")
+    department: Optional[str] = None
+    candidate_departments: list[str] = Field(default_factory=list, description="담당부서 후보 전체")
+    priority: Optional[str] = None
+    emotion: Optional[str] = Field(default=None, description="감정상태")
+    core_request: Optional[str] = Field(default=None, description="핵심요청")
+    classification_reason: Optional[str] = Field(default=None, description="분류근거")
+    requires_manager_review: bool = Field(
+        default=False, description="rules.yaml 9절 민감 민원 규칙에 걸려 담당자의 즉시 검토가 필요한지 여부"
+    )
+    matched_rules: list[str] = Field(default_factory=list, description="rule_flags.matched_rules (규칙 엔진 매칭 경로)")
+    final_answer: Optional[str] = None
+
+
+class SubmissionClassificationUpdate(BaseModel):
+    """담당자가 '문의 접수함'에서 AI 처리(전체 파이프라인)를 실행한 뒤, 그 분류
+    결과를 원본 접수 건에 되돌려 기록할 때 보내는 요청 — 담당자가 화면에서 담당부서를
+    직접 고쳤다면 그 값이 반영된다. status는 이 호출로 '검토중'이 된다."""
+
+    inquiry_type: str
+    inquiry_types: list[str] = Field(default_factory=list)
+    department: str
+    candidate_departments: list[str] = Field(default_factory=list)
+    priority: str
+    emotion: Optional[str] = None
+    core_request: Optional[str] = None
+    classification_reason: Optional[str] = None
+    requires_manager_review: bool = False
+
+
+class SubmissionAnswerUpdate(BaseModel):
+    """담당자가 답변 초안 화면에서 '최종 답변으로 저장'을 눌렀을 때 보내는 요청.
+    status는 이 호출로 자동으로 '답변완료'가 된다."""
+
+    final_answer: str
 
 
 class RegenerateAnswerRequest(BaseModel):

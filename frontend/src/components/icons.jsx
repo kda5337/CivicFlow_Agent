@@ -12,6 +12,26 @@ export function DashboardIcon() {
   )
 }
 
+export function InboxIcon() {
+  return (
+    <svg {...common}>
+      <path d="M4 12h4l2 3h4l2-3h4" />
+      <path d="M4 12l1.5-7h13L20 12" />
+      <path d="M4 12v6a1 1 0 001 1h14a1 1 0 001-1v-6" />
+    </svg>
+  )
+}
+
+export function ExternalLinkIcon() {
+  return (
+    <svg {...common}>
+      <path d="M14 4h6v6" />
+      <path d="M20 4l-9 9" />
+      <path d="M18 14v5a1 1 0 01-1 1H5a1 1 0 01-1-1V7a1 1 0 011-1h5" />
+    </svg>
+  )
+}
+
 export function IntakeIcon() {
   return (
     <svg {...common}>
@@ -49,6 +69,14 @@ export function DraftIcon() {
   )
 }
 
+export function ReviewIcon() {
+  return (
+    <svg {...common}>
+      <path d="M20 6L9 17l-5-5" />
+    </svg>
+  )
+}
+
 export function KbIcon() {
   return (
     <svg {...common}>
@@ -58,11 +86,25 @@ export function KbIcon() {
   )
 }
 
+export function AnsweredIcon() {
+  return (
+    <svg {...common}>
+      <path d="M4 12h4l2 3h4l2-3h4" />
+      <path d="M4 12l1.5-7h13L20 12" />
+      <path d="M4 12v6a1 1 0 001 1h14a1 1 0 001-1v-6" />
+      <path d="M9.5 12.5l1.8 1.8L14.5 10.5" />
+    </svg>
+  )
+}
+
 export const ICONS_BY_VIEW = {
   dashboard: DashboardIcon,
+  submissions: InboxIcon,
+  answered: AnsweredIcon,
   intake: IntakeIcon,
   analysis: AnalysisIcon,
   rag: RagIcon,
   draft: DraftIcon,
+  review: ReviewIcon,
   kb: KbIcon,
 }

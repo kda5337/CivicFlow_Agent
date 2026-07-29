@@ -63,7 +63,7 @@ rules:
   - name: 법무_분류
     applies_to: ["취소/환불", "불만/신고"]
     priority: 10
-    keywords: ["소송", "고발", "약관", "법적조치", "손해배상"]
+    keywords: ["소송", "고발", "약관", "법적조치", "손해배상", "고소"]
     data_source: legal_team_faq  # 생성된 법무팀 FAQ 105건 — 관리자검토필요 미설정이라 실제로 retrieve_node에서 쓰임
     result:
       담당부서: 법무팀
