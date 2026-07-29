@@ -74,10 +74,12 @@ body{
 .nav-item .num{ font-family:var(--mono); font-size:10px; color:rgba(255,255,255,.3); margin-left:auto;}
 .nav-item.active .num{ color:var(--teal); }
 
+.sidebar-links{ margin-top:auto; display:flex; flex-direction:column; gap:8px; }
 .sidebar-public-link{
-  margin-top:auto; display:flex; align-items:center; gap:9px;
+  display:flex; align-items:center; gap:9px; width:100%;
   padding:10px 12px; border-radius:10px; border:1px solid rgba(255,255,255,.18);
   color:var(--teal); font-size:12.5px; font-weight:600; text-decoration:none;
+  background:none; cursor:pointer; font-family:inherit; text-align:left;
   transition:background .15s ease, border-color .15s ease;
 }
 .sidebar-public-link svg{ width:16px; height:16px; flex-shrink:0; }
@@ -187,6 +189,8 @@ textarea{ resize:vertical; min-height:120px; line-height:1.6; }
 .btn-teal{ background:var(--teal); color:#fff; }
 .btn-ghost{ background:transparent; color:var(--text-dim); border:1px solid var(--line); }
 .btn-ghost:hover:not(:disabled){ background:var(--bg); }
+.btn-danger{ background:var(--red); color:#fff; }
+.btn-danger:hover:not(:disabled){ background:#a83c3d; }
 .form-actions{ display:flex; gap:10px; margin-top:20px; justify-content:flex-end; }
 
 /* AI analysis */

@@ -36,7 +36,9 @@ function formatElapsed(submittedAt) {
 // citizen_submissions은 답변완료 전환 시각을 저장하지 않아(submitted_at만 있음)
 // "평균 처리 시간"은 이 데이터로 계산할 수 없다 — 그래서 이 화면에서 아예 제외했다.
 // 나머지 통계는 모두 GET /submissions 하나로 실시간 계산한 실제 값이다.
-export default function DashboardView() {
+// lockDepartment: 담당자용 페이지(StaffView)에서 넘겨주면, 모든 통계를 그 부서
+// 것만으로 계산한다 — 관리자용 화면에서는 넘기지 않아 기존처럼 전체 통계를 보여준다.
+export default function DashboardView({ lockDepartment }) {
   const [submissions, setSubmissions] = useState(null)
   const [error, setError] = useState(null)
 
@@ -47,7 +49,7 @@ export default function DashboardView() {
         if (!response.ok) throw new Error(`${response.status} ${response.statusText}`)
         return response.json()
       })
-      .then(setSubmissions)
+      .then((data) => setSubmissions(lockDepartment ? data.filter((s) => s.department === lockDepartment) : data))
       .catch((err) => setError(err.message))
   }
 

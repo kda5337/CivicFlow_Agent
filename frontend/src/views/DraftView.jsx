@@ -4,7 +4,16 @@ import { useEffect, useState } from 'react'
 // 여기서는 초안을 고치기만 하고 저장하지 않는다 — "검토하기"를 누르면 지금까지
 // 고친 텍스트를 들고 다음 단계(검토 완료)로 넘어가고, 실제 등록(저장)은 그 화면의
 // "검토 완료 & 등록" 버튼이 한다.
-export default function DraftView({ result, onRegenerate, loading, onPrev, answerSourceDocs, sources, onProceedToReview }) {
+export default function DraftView({
+  result,
+  onRegenerate,
+  loading,
+  onPrev,
+  answerSourceDocs,
+  sources,
+  onProceedToReview,
+  hideTraceLink,
+}) {
   const [draftText, setDraftText] = useState('')
 
   useEffect(() => {
@@ -105,7 +114,7 @@ export default function DraftView({ result, onRegenerate, loading, onPrev, answe
               "검토하기"를 누르면 다음 단계에서 최종 확인 후 등록합니다
             </div>
           </div>
-          {result.trace_url && (
+          {!hideTraceLink && result.trace_url && (
             <div className="rev-item">
               <a href={result.trace_url} target="_blank" rel="noreferrer">
                 Langfuse 트레이스 보기 →
