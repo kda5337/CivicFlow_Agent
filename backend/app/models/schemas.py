@@ -7,6 +7,31 @@ InquiryType = Literal[
 ]
 
 
+class KnowledgeBaseSource(BaseModel):
+    """지식베이스 관리 화면에 보여줄 FAQ 출처 테이블 하나의 현황."""
+
+    table: str
+    label: str
+    row_count: int = Field(description="Supabase 해당 테이블의 실제 행 수")
+    embedded_count: int = Field(description="chroma_merged_faq에 임베딩되어 있는 건수")
+    in_sync: bool = Field(description="row_count와 embedded_count가 일치하는지")
+
+
+class KnowledgeBaseItem(BaseModel):
+    """지식베이스 관리 화면에서 출처 하나를 펼쳤을 때 보여줄 FAQ 항목 하나."""
+
+    id: int
+    question: str
+    answer: str
+
+
+class KnowledgeBaseItemWrite(BaseModel):
+    """지식베이스 항목 추가/수정 요청. 이전 값을 남기지 않고 그대로 덮어쓴다."""
+
+    question: str
+    answer: str
+
+
 class RelevanceCheckResult(BaseModel):
     """접수 단계에서 입력이 이 시스템의 처리 대상(민원·문의)인지 판별한 결과."""
 

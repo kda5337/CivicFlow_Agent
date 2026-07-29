@@ -11,6 +11,7 @@ from fastapi.middleware.cors import CORSMiddleware  # noqa: E402
 
 from app.api.routers.departments import router as departments_router  # noqa: E402
 from app.api.routers.inquiries import router as inquiries_router  # noqa: E402
+from app.api.routers.knowledge_base import router as knowledge_base_router  # noqa: E402
 from app.api.routers.submissions import router as submissions_router  # noqa: E402
 
 app = FastAPI(title="CivicFlow Agent API")
@@ -25,6 +26,7 @@ app.add_middleware(
 app.include_router(inquiries_router)
 app.include_router(departments_router)
 app.include_router(submissions_router)
+app.include_router(knowledge_base_router)
 
 
 @app.on_event("shutdown")

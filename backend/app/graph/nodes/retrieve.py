@@ -3,25 +3,10 @@ import psycopg2
 from app.core.config import get_settings
 from app.core.tracing import get_langfuse_client
 from app.graph.state import InquiryState
+from app.rag.knowledge_base import FAQ_TABLES as _FAQ_ANSWER_TABLES
 from app.rag.vectorstore import get_vectorstore
 
 MERGED_FAQ_COLLECTION_NAME = "chroma_merged_faq"
-
-# merge_chroma_faq.py가 남긴 metadata.source_table 값과 1:1로 대응하는 Supabase 테이블
-# 화이트리스트. SQL에 테이블명을 넣기 전에 반드시 이 목록으로 검증한다(인젝션 방지).
-_FAQ_ANSWER_TABLES = {
-    "duty_free_faq",
-    "coupang_faq",
-    "coupang_faq_personal_info",
-    "coupang_faq_delivery",
-    "coupang_faq_order_payment",
-    "it_support_faq",
-    "marketing_promotion_faq",
-    "admin_team_faq",
-    "safety_team_faq",
-    "legal_team_faq",
-    "sensitive_complaint_faq",
-}
 
 # coupang_faq와 컬럼 구성이 동일한(faq_id 제외) 테이블들 — PDF파일명+번호 또는 URL로
 # 출처를 조립하는 로직을 그대로 공유한다.

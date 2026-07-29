@@ -11,12 +11,19 @@ const DEPARTMENTS_URL = 'http://localhost:8000/departments'
 // 판단하면 rules.yaml에 있는 부서 전체를 버튼(칩)으로 골라 직접 고칠 수 있다.
 // 고친 값은 App.jsx의 result 상태에 바로 반영되므로, 다른 단계로 갔다가 돌아와도
 // 유지된다.
+//
+// onConfirmDepartmentChange가 있으면(담당자용 페이지) 부서를 바꾸는 순간부터 "다음
+// 단계"를 막고, 정말 우리 부서 담당이 아닌 게 맞는지 한 번 더 확인시킨다 — 부서를
+// 바꾼 문의는 그 담당자의 문의 접수함에서 사라지는(lockDepartment 필터에 걸리는)
+// 되돌리기 번거로운 변화라, 실수로 칩을 잘못 눌러 문의를 놓치는 걸 막기 위해서다.
+// 관리자용 화면은 이 prop을 넘기지 않아 기존처럼 바로 다음 단계로 넘어갈 수 있다.
 export default function AnalysisView({
   result,
   onNext,
   onDepartmentChange,
   originalDepartment,
   departmentOverridden,
+  onConfirmDepartmentChange,
 }) {
   const [departments, setDepartments] = useState([])
 
@@ -96,10 +103,38 @@ export default function AnalysisView({
                 </button>
               ))}
             </div>
-            {departmentOverridden && (
-              <div className="dept-override-note">
-                담당자가 수동으로 수정함 (AI 원래 분류: {originalDepartment})
+            {departmentOverridden && onConfirmDepartmentChange ? (
+              <div
+                style={{
+                  background: 'var(--red-soft)',
+                  border: '1px solid var(--red)',
+                  borderRadius: 9,
+                  padding: '10px 14px',
+                  display: 'flex',
+                  flexDirection: 'column',
+                  gap: 8,
+                  width: '100%',
+                }}
+              >
+                <div style={{ color: 'var(--red)', fontSize: 12.5, fontWeight: 600 }}>
+                  ⚠ 이 문의가 우리 부서 담당이 아닌 것이 확실합니까? 부서를 변경하면 이 문의는 문의
+                  접수함에서 사라집니다. (AI 원래 분류: {originalDepartment})
+                </div>
+                <button
+                  className="btn btn-danger"
+                  type="button"
+                  style={{ alignSelf: 'flex-start' }}
+                  onClick={() => onConfirmDepartmentChange(classification.담당부서)}
+                >
+                  네, 담당 부서를 변경합니다
+                </button>
               </div>
+            ) : (
+              departmentOverridden && (
+                <div className="dept-override-note">
+                  담당자가 수동으로 수정함 (AI 원래 분류: {originalDepartment})
+                </div>
+              )
             )}
           </div>
           <div className="result-row">
@@ -152,7 +187,12 @@ export default function AnalysisView({
       </div>
 
       <div className="form-actions">
-        <button className="btn btn-primary" type="button" onClick={onNext}>
+        <button
+          className="btn btn-primary"
+          type="button"
+          onClick={onNext}
+          disabled={Boolean(departmentOverridden && onConfirmDepartmentChange)}
+        >
           다음 단계: RAG 검색 결과 →
         </button>
       </div>

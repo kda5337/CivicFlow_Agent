@@ -1,5 +1,6 @@
 import { Fragment, useEffect, useState } from 'react'
 import { priorityBadgeClass } from '../priorityBadge.js'
+import DepartmentFilter, { ALL_DEPARTMENTS } from '../components/DepartmentFilter.jsx'
 
 const SUBMISSIONS_URL = 'http://localhost:8000/submissions'
 
@@ -8,10 +9,14 @@ const SUBMISSIONS_URL = 'http://localhost:8000/submissions'
 // 뒤 프론트에서 상태로 걸러낸다 — 문의 접수함(SubmissionsListView)과 같은 데이터를
 // 다른 관점(사용자 입력 + 분류 결과 + 확정 답변을 한 번에)으로 보여주는 용도라
 // 별도 엔드포인트를 새로 만들 필요는 없다.
-export default function AnsweredView() {
+// lockDepartment: 담당자용 페이지(StaffView)에서 넘겨주면, 그 부서로 고정하고 부서
+// 선택 칩 자체를 숨긴다 — SubmissionsListView와 같은 패턴.
+export default function AnsweredView({ lockDepartment }) {
   const [submissions, setSubmissions] = useState(null)
   const [error, setError] = useState(null)
   const [openId, setOpenId] = useState(null)
+  const [deptFilter, setDeptFilter] = useState(ALL_DEPARTMENTS)
+  const effectiveDeptFilter = lockDepartment || deptFilter
 
   const load = () => {
     setError(null)
@@ -28,25 +33,35 @@ export default function AnsweredView() {
     load()
   }, [])
 
+  const visibleSubmissions = submissions
+    ? submissions.filter((item) => effectiveDeptFilter === ALL_DEPARTMENTS || item.department === effectiveDeptFilter)
+    : null
+
   return (
     <div className="view" id="view-answered">
       <div className="card">
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 12 }}>
           <h2 className="section-title" style={{ margin: 0 }}>
-            답변 완료함 {submissions ? `(${submissions.length}건)` : ''}
+            답변 완료함 {visibleSubmissions ? `(${visibleSubmissions.length}건)` : ''}
           </h2>
           <button className="btn btn-ghost" type="button" onClick={load}>
             새로고침
           </button>
         </div>
 
+        {!lockDepartment && <DepartmentFilter value={deptFilter} onChange={setDeptFilter} />}
+
         {error && <div className="error-banner">목록을 불러오지 못했습니다: {error}</div>}
 
-        {submissions && submissions.length === 0 && (
-          <div className="empty-state">아직 답변을 확정한 문의가 없습니다.</div>
+        {visibleSubmissions && visibleSubmissions.length === 0 && (
+          <div className="empty-state">
+            {effectiveDeptFilter === ALL_DEPARTMENTS
+              ? '아직 답변을 확정한 문의가 없습니다.'
+              : `'${effectiveDeptFilter}' 담당의 답변 완료 문의가 없습니다.`}
+          </div>
         )}
 
-        {submissions && submissions.length > 0 && (
+        {visibleSubmissions && visibleSubmissions.length > 0 && (
           <table>
             <tbody>
               <tr>
@@ -58,7 +73,7 @@ export default function AnsweredView() {
                 <th>우선순위</th>
                 <th></th>
               </tr>
-              {submissions.map((item) => {
+              {visibleSubmissions.map((item) => {
                 const isOpen = openId === item.id
                 return (
                   <Fragment key={item.id}>
