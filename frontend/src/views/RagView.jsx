@@ -1,5 +1,10 @@
 import { useState } from 'react'
 
+// retrieve_node의 유사도(score)는 높을수록 더 유사하다(0~1). 이 값을 넘는 문서가
+// 하나도 없으면, 근거가 약한 채로 답변이 만들어질 수 있으니 담당자가 직접 확인하라는
+// 경고를 보여준다.
+const SIMILARITY_WARNING_THRESHOLD = 0.6
+
 // 실제 retrieve_node 결과(state.retrieved_docs)를 그대로 보여준다. 목업에 있던
 // "문단 번호"/"최종 수정일"은 실제 API에 없는 값이라 제외했다.
 function splitQuestionAnswer(content) {
@@ -60,6 +65,7 @@ export default function RagView({
 
   const usedSources = new Set((currentSourceDocs || []).map((d) => d.source))
   const selectedDocs = docs.filter((_, index) => selected.has(index))
+  const hasStrongMatch = docs.some((doc) => doc.score >= SIMILARITY_WARNING_THRESHOLD)
 
   return (
     <div className="view" id="view-rag">
@@ -68,6 +74,13 @@ export default function RagView({
         답변 생성에 쓸 문서를 체크박스로 골라 "선택한 문서로 답변 생성"을 누르면, 그 문서(들)만
         근거로 답변 초안을 다시 만듭니다. 아무것도 고르지 않으면 기존 답변이 유지됩니다.
       </p>
+
+      {docs.length > 0 && !hasStrongMatch && (
+        <div className="warning-banner">
+          ⚠ 유사도 {Math.round(SIMILARITY_WARNING_THRESHOLD * 100)}% 이상 비슷한 문서를 찾지 못했습니다. 근거가 약할 수
+          있으니 답변 내용을 담당자가 각별히 주의해서 확인해 주세요.
+        </div>
+      )}
 
       {docs.length === 0 && (
         <div className="card empty-state">이 문의와 관련해 검색된 근거 문서가 없습니다.</div>
@@ -92,7 +105,7 @@ export default function RagView({
                   <span className="badge low">현재 답변 근거</span>
                 )}
               </span>
-              <span className="rag-score">유사도 {doc.score.toFixed(3)}</span>
+              <span className="rag-score">유사도: {(doc.score * 100).toFixed(1)}%</span>
             </div>
             {question && <div className="rag-body" style={{ fontWeight: 700, marginBottom: 4 }}>{question}</div>}
             <div className="rag-body">{answer}</div>

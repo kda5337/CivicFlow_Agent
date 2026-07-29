@@ -22,10 +22,16 @@ def intake_node(state: InquiryState) -> dict:
     if not text:
         raise ValueError("raw_text가 비어 있습니다.")
 
-    relevance = check_relevance(text)
+    if state.get("skip_relevance_check"):
+        relevance_check = {
+            "관련여부": True,
+            "판단근거": "사용자용 문의 접수 페이지를 통해 제출된 문의라 관련성 확인을 생략함",
+        }
+    else:
+        relevance_check = check_relevance(text).model_dump()
 
     return {
         "raw_text": text,
         "received_at": datetime.now(timezone.utc).isoformat(),
-        "relevance_check": relevance.model_dump(),
+        "relevance_check": relevance_check,
     }

@@ -1,18 +1,15 @@
 import { useEffect, useState } from 'react'
 
 // 실제 generate_node 결과(state.draft_answer)를 편집 가능한 형태로 보여준다.
-// "최종 답변으로 저장"은 이를 받아줄 백엔드 엔드포인트가 아직 없어 브라우저
-// 안에서만 저장 상태를 표시한다(새로고침하면 사라짐) — 서버에 실제로 저장되는
-// 것처럼 보이지 않도록 문구로 명시한다. "AI 재생성 요청"은 같은 원문으로
-// 파이프라인을 다시 호출하는 실제 동작이다.
-export default function DraftView({ result, onRegenerate, loading, onPrev, answerSourceDocs, sources }) {
+// 여기서는 초안을 고치기만 하고 저장하지 않는다 — "검토하기"를 누르면 지금까지
+// 고친 텍스트를 들고 다음 단계(검토 완료)로 넘어가고, 실제 등록(저장)은 그 화면의
+// "검토 완료 & 등록" 버튼이 한다.
+export default function DraftView({ result, onRegenerate, loading, onPrev, answerSourceDocs, sources, onProceedToReview }) {
   const [draftText, setDraftText] = useState('')
-  const [saved, setSaved] = useState(false)
 
   useEffect(() => {
     if (result) {
       setDraftText(result.draft_answer || result.intake_reply || '')
-      setSaved(false)
     }
   }, [result])
 
@@ -61,10 +58,7 @@ export default function DraftView({ result, onRegenerate, loading, onPrev, answe
           <textarea
             style={{ minHeight: 220 }}
             value={draftText}
-            onChange={(event) => {
-              setDraftText(event.target.value)
-              setSaved(false)
-            }}
+            onChange={(event) => setDraftText(event.target.value)}
           />
           {sources && sources.length > 0 && (
             <div className="sources-readonly">
@@ -83,8 +77,8 @@ export default function DraftView({ result, onRegenerate, loading, onPrev, answe
             <button className="btn btn-ghost" type="button" onClick={onRegenerate} disabled={loading}>
               {loading ? '재생성 중...' : 'AI 재생성 요청'}
             </button>
-            <button className="btn btn-primary" type="button" onClick={() => setSaved(true)} disabled={saved}>
-              {saved ? '저장됨 ✓' : '최종 답변으로 저장 ✓'}
+            <button className="btn btn-primary" type="button" onClick={() => onProceedToReview(draftText)}>
+              검토하기 →
             </button>
           </div>
         </div>
@@ -102,13 +96,13 @@ export default function DraftView({ result, onRegenerate, loading, onPrev, answe
             <div className="rev-item">
               <div className="rev-time">방금</div>
               <div className="rev-actor">담당자 편집 중</div>
-              <div style={{ color: 'var(--text-dim)' }}>아직 저장되지 않음</div>
+              <div style={{ color: 'var(--text-dim)' }}>아직 검토 전</div>
             </div>
           )}
           <div className="rev-item">
             <div className="rev-time">-</div>
             <div className="rev-actor" style={{ color: 'var(--text-dim)' }}>
-              {saved ? '이 브라우저 세션에만 저장됨 (서버 저장 API 미구현)' : '최종 승인 대기 중'}
+              "검토하기"를 누르면 다음 단계에서 최종 확인 후 등록합니다
             </div>
           </div>
           {result.trace_url && (

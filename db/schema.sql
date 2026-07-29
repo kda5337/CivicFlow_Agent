@@ -1,5 +1,36 @@
 -- PostgreSQL 스키마 (12절 기술스택: PostgreSQL/MySQL)
 
+-- 사용자용 문의 접수 페이지(/submit)에서 이름/연락처/문의 원문을 받아 저장하는 곳.
+-- 접수(INSERT) 직후 서버가 바로 classify_node+rules_node만 실행해(RAG 검색·답변 생성은
+-- 아직 안 함) inquiry_type/inquiry_types/department/candidate_departments/priority/
+-- emotion을 채우고 status를 '검토중'으로 바꾼다 — "문의 유형 자동 확인"이 사용자
+-- 페이지에 뜨는 시점이 바로 이때다. 이후 담당자가 내부 화면에서 실제 답변까지
+-- 만들어 "최종 답변으로 저장"을 누르면 final_answer가 채워지고 status가
+-- '답변완료'로 바뀐다. 담당부서가 틀렸을 때 직접 고치는 버튼은 내부 담당자
+-- 화면(AI 분석 결과)에만 있고, 그 결과가 다시 이 테이블에 반영된다.
+-- 아래 departments/inquiries 등은 AI 처리 결과까지 정규화해서 저장하려던 설계였으나
+-- 실제로 생성된 적은 없다(2026-07-28 기준) — citizen_submissions는 그와 별개로,
+-- 지금 당장 필요한 "원문 접수함 + 처리 상태 추적" 용도로 실제 사용 중인 테이블이다.
+CREATE TABLE citizen_submissions (
+    id UUID PRIMARY KEY,
+    name TEXT NOT NULL,
+    contact TEXT NOT NULL,
+    raw_text TEXT NOT NULL,
+    submitted_at TIMESTAMPTZ NOT NULL DEFAULT now(),
+    status TEXT NOT NULL DEFAULT '접수완료',  -- 접수완료 / 검토중 / 답변완료
+    inquiry_type TEXT,               -- 주요문의유형 (분류 전엔 NULL)
+    inquiry_types TEXT[],            -- 문의유형들(해당되는 유형 전체)
+    department TEXT,                 -- 담당부서
+    candidate_departments TEXT[],    -- 담당부서 후보 전체(rule_flags.candidate_departments)
+    priority TEXT,                   -- 우선순위
+    emotion TEXT,                    -- 감정상태
+    core_request TEXT,               -- 핵심요청 (classify_node가 요약한 문의의 핵심 요청)
+    classification_reason TEXT,      -- 분류근거 (classify_node의 LLM 분류 근거)
+    requires_manager_review BOOLEAN NOT NULL DEFAULT false,  -- rule_flags.requires_manager_review (9절 민감 민원)
+    matched_rules TEXT[],             -- rule_flags.matched_rules (규칙 엔진 매칭 경로)
+    final_answer TEXT                -- 담당자가 확정해 저장한 답변 (확정 전엔 NULL)
+);
+
 CREATE TABLE departments (
     id SERIAL PRIMARY KEY,
     name TEXT NOT NULL UNIQUE
