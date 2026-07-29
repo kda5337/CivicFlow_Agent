@@ -94,58 +94,6 @@ WELCOME_REPLY_PROMPT = (
 """
 )
 
-CURRICULUM_SQL_PROMPT = """당신은 대학교 학사 데이터베이스(PostgreSQL)에서 문의에 답하기 위한 SQL을 작성하는 보조원입니다.
-아래 두 테이블만 존재하며, 이 두 테이블만 사용할 수 있습니다.
-
-테이블: graduation_requirements (학번별 졸업 이수학점 기준)
-- id (PK, INT)
-- cohort (SMALLINT): 입학년도. 예) 22학번 -> 2022
-- category (TEXT): 기초교양 / 융합교양 / 계열교양 / 전공필수 / 전공선택 / 총졸업학점
-- required_credits (INT, NULL 허용): 해당 카테고리의 졸업 필요 학점 (계열교양처럼 미지정이면 NULL)
-
-테이블: curriculum_courses (학번별 교육과정 개별 교과목)
-- id (PK, INT)
-- requirement_id (INT, FK -> graduation_requirements.id): 이 과목이 속한 졸업요건 카테고리
-- track (TEXT, NULL 허용): NULL=공통과정(전 트랙 공통), 'Language-AI', 'Vision-AI'
-- year (SMALLINT): 학년 (1~4)
-- semester (SMALLINT): 학기 (1~2)
-- course_name (TEXT): 교과목명
-- credits (SMALLINT), theory_hours (SMALLINT), practice_hours (SMALLINT)
-
-중요: curriculum_courses 테이블에는 cohort 컬럼이 없습니다. cohort는 오직 graduation_requirements에만 있습니다.
-그래서 curriculum_courses를 cohort(학번)로 필터링하려면 반드시 아래처럼 JOIN 해서 graduation_requirements.cohort를 써야 합니다.
-  FROM curriculum_courses cc JOIN graduation_requirements gr ON gr.id = cc.requirement_id WHERE gr.cohort = ...
-현재 DB에는 22학번(cohort = 2022) 데이터만 있습니다. 문의에 학번이 명시되어 있지 않으면 cohort = 2022로 조회하세요.
-
-반드시 지킬 규칙:
-- 오직 SELECT 문 하나만 작성하세요. 세미콜론으로 여러 문장을 이어 쓰지 마세요.
-- INSERT/UPDATE/DELETE/DROP/ALTER/TRUNCATE 등 데이터나 스키마를 바꾸는 문장은 절대 작성하지 마세요.
-- 위 두 테이블과 컬럼 외에 존재하지 않는 테이블/컬럼을 지어내지 마세요.
-- requirement_id로 필터링할 때 `requirement_id = (SELECT id FROM graduation_requirements WHERE ...)` 같은 스칼라 서브쿼리는
-  조건이 조금만 부족해도 여러 행이 반환되어 에러가 납니다. 항상 아래 예시들처럼 JOIN + WHERE 조합을 사용하세요.
-
-예시 1) "전공선택은 몇 학점 들어야 졸업할 수 있어?"
-SELECT required_credits FROM graduation_requirements WHERE cohort = 2022 AND category = '전공선택'
-
-예시 2) "22학번 Language-AI 트랙은 3학년 2학기에 무슨 과목을 들어야 해?"
-SELECT cc.course_name, cc.credits
-FROM curriculum_courses cc
-JOIN graduation_requirements gr ON gr.id = cc.requirement_id
-WHERE gr.cohort = 2022 AND cc.track = 'Language-AI' AND cc.year = 3 AND cc.semester = 2
-
-예시 3) "1학년 때 듣는 과목이 뭐가 있어?" (트랙 구분 없는 공통과정 질문)
-SELECT cc.year, cc.semester, cc.course_name, cc.credits
-FROM curriculum_courses cc
-JOIN graduation_requirements gr ON gr.id = cc.requirement_id
-WHERE gr.cohort = 2022 AND cc.year = 1
-ORDER BY cc.semester
-
-사용자 문의:
-\"\"\"{text}\"\"\"
-
-위 문의에 답하는 데 필요한 데이터를 조회하는 SQL을 작성하세요.
-"""
-
 GENERATE_PROMPT = """당신은 담당자가 검토 후 발송할 답변 초안을 작성하는 AI입니다.
 아래 "근거 문서"에 없는 내용은 임의로 절대 지어내지 말고, 근거가 부족하면 담당자가 추가 확인해야 한다고 명시하세요.
 세부적인 개인정보와 특정 회사의 이름을 언급하지 마세요. 예시와 같이 대체해야 된다. (ex. 마이쿠팡 -> 마이 페이지)

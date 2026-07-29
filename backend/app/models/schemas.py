@@ -85,14 +85,6 @@ class ClassificationResult(BaseModel):
     분류근거: str
 
 
-class CurriculumSQLQuery(BaseModel):
-    """졸업요건_문의/교육과정_문의 Rule에 걸린 문의에 답하기 위해 LLM이 생성한 조회 SQL."""
-
-    sql: str = Field(
-        description="graduation_requirements/curriculum_courses 테이블만 사용하는 단일 SELECT 문"
-    )
-
-
 class RetrievedDoc(BaseModel):
     content: str
     source: str

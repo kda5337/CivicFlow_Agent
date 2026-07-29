@@ -418,9 +418,11 @@ function RegisterTab({ visitorName, onSubmitted }) {
                 {result.id}
               </div>
               <div style={{ display: "flex", flexDirection: "column", gap: 10, fontSize: 14 }}>
-                <Row label="자동 분류 유형" value={result.inquiry_type} />
+                <Row
+                  label="문의 유형 후보"
+                  value={result.inquiry_types && result.inquiry_types.length ? result.inquiry_types.join(", ") : result.inquiry_type}
+                />
                 <Row label="담당 부서" value={result.department} />
-                <Row label="우선순위" value={result.priority} />
               </div>
               <button style={{ ...secondaryBtn, marginTop: 16, padding: "8px 14px", fontSize: 13 }} onClick={handleWriteNew}>
                 새 문의 작성하기
@@ -436,7 +438,7 @@ function RegisterTab({ visitorName, onSubmitted }) {
           {phase !== "result" ? (
             <p style={{ fontSize: 13.5, lineHeight: 1.8, margin: 0 }}>
               문의를 등록하면 먼저 <b style={{ color: "#7ED9BE" }}>민원·문의가 맞는지 확인</b>하고, 적절한 문의로
-              확인되면 <b style={{ color: "#7ED9BE" }}>문의 유형 자동 확인</b>이 이뤄져 담당 부서와 우선순위가
+              확인되면 <b style={{ color: "#7ED9BE" }}>문의 유형 자동 확인</b>이 이뤄져 담당 부서가
               정해집니다. 이후 담당자가 답변을 준비하며, 완료되면{" "}
               <b style={{ color: "#7ED9BE" }}>답변 확인</b> 탭에 표시됩니다.
             </p>
@@ -471,15 +473,11 @@ function ClassifyTab({ items }) {
               <div style={{ fontSize: 14, color: T.ink, marginBottom: 14 }}>{truncate(item.raw_text, 120)}</div>
               {item.inquiry_type ? (
                 <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
-                  <div style={{ display: "inline-flex", alignSelf: "flex-start", alignItems: "center", gap: 7, background: T.tealSoft, color: T.tealText, padding: "5px 12px", borderRadius: 999, fontSize: 13, fontWeight: 500 }}>
-                    <Sparkles size={14} /> {item.inquiry_type}
-                  </div>
-                  <Row label="해당 유형 전체" value={item.inquiry_types.join(", ")} />
+                  <Row label="문의 유형 후보" value={item.inquiry_types.join(", ")} />
                   <Row label="담당 부서" value={item.department} />
                   {item.candidate_departments.length > 1 && (
                     <Row label="담당부서 후보" value={item.candidate_departments.join(", ")} />
                   )}
-                  <Row label="우선순위" value={item.priority} />
                 </div>
               ) : (
                 <div style={{ color: T.muted, fontSize: 13 }}>분류 대기 중입니다.</div>
