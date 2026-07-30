@@ -148,7 +148,7 @@ jobs:
             docker pull "$FRONTEND_IMAGE" & FRONTEND_PULL_PID=$!
             wait "$API_PULL_PID"
             wait "$FRONTEND_PULL_PID"
-            docker compose -f docker-compose.prod.yml up -d --force-recreate
+            docker-compose -f docker-compose.prod.yml up -d --force-recreate
 
             # [계획 중, 아직 비활성화] FAQ 원본(data/knowledge_base 등 git에 있는 것)만 배포
             # 때마다 자동 재적재하려면 아래 주석을 해제한다. query_cache/answer_cache는 운영
@@ -156,7 +156,7 @@ jobs:
             # 주의: 지금 backend/app/rag/ingest.py는 "**/*.md"만 찾는데 data/knowledge_base/는
             # 실제로 .json 파일들이라, 그대로 켜면 0건 적재로 끝난다 — 활성화 전에 실제로 쓰는
             # ingest_*.py + merge_chroma_faq.py 계열로 바꾸거나 ingest.py 자체를 고쳐야 한다.
-            # docker compose -f docker-compose.prod.yml exec -T api python -m app.rag.ingest
+            # docker-compose -f docker-compose.prod.yml exec -T api python -m app.rag.ingest
 
             echo "헬스체크 중..."
             MAX_RETRIES=12
@@ -170,13 +170,13 @@ jobs:
               echo "  시도 $i/$MAX_RETRIES (HTTP $STATUS)..."
               if [ "$i" = "$MAX_RETRIES" ]; then
                 echo "헬스체크 실패 — 자동 롤백 시도"
-                docker compose -f docker-compose.prod.yml logs --tail=100
+                docker-compose -f docker-compose.prod.yml logs --tail=100
                 if [ -f .previous_api_image ] && [ -f .previous_frontend_image ]; then
                   export API_IMAGE=$(cat .previous_api_image)
                   export FRONTEND_IMAGE=$(cat .previous_frontend_image)
                   docker pull "$API_IMAGE"
                   docker pull "$FRONTEND_IMAGE"
-                  docker compose -f docker-compose.prod.yml up -d --force-recreate
+                  docker-compose -f docker-compose.prod.yml up -d --force-recreate
                   echo "이전 버전으로 롤백됨"
                 fi
                 exit 1
@@ -210,7 +210,7 @@ jobs:
             docker pull "$FRONTEND_IMAGE" & FRONTEND_PULL_PID=$!
             wait "$API_PULL_PID"
             wait "$FRONTEND_PULL_PID"
-            docker compose -f docker-compose.prod.yml up -d --force-recreate
+            docker-compose -f docker-compose.prod.yml up -d --force-recreate
 
             MAX_RETRIES=12
             for i in $(seq 1 $MAX_RETRIES); do
@@ -224,5 +224,5 @@ jobs:
               sleep 5
             done
             echo "롤백 실패"
-            docker compose -f docker-compose.prod.yml logs --tail=50
+            docker-compose -f docker-compose.prod.yml logs --tail=50
             exit 1
