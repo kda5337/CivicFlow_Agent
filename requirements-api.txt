@@ -1,0 +1,30 @@
+# backend/app 서버(app.main:app)가 실제로 쓰는 것만 담은 requirements.txt 부분집합
+# (Dockerfile.api 전용, 이미지 용량 절감용). 로컬 개발용 requirements.txt는 그대로 둔다.
+#
+# 제외한 것과 이유:
+#   - pypdf, pymupdf, pytesseract: backend/app/rag/pdf_toc.py·ocr_toc.py 전용인데,
+#     둘 다 ingest.py처럼 독립 실행 스크립트라 app.main 로드 시 import되지 않는다.
+#   - matplotlib: eval/metrics.py 전용 (애초에 이 이미지엔 eval/도 안 들어간다).
+#   - streamlit: frontend/app.py(디버그용 임시 화면) 전용.
+#   - torch: 여기 명시하지 않는다 — Dockerfile.api가 GPU 없는 VM에 맞는 CPU 전용 wheel을
+#     먼저 설치해두면, sentence-transformers는 그 torch를 그대로 재사용한다(기본 PyPI
+#     wheel을 쓰면 안 쓰는 CUDA 라이브러리까지 딸려와서 수 GB가 그냥 낭비된다).
+fastapi>=0.115
+uvicorn[standard]>=0.32
+langgraph>=0.2.60
+langchain>=0.3.9
+langchain-text-splitters>=0.3.0
+langchain-upstage>=0.4.0
+langchain-community>=0.3.9
+langchain-chroma>=0.1.4
+langchain-huggingface>=0.1.0
+sentence-transformers>=3.0
+chromadb>=0.5.20
+langfuse>=3.0.0
+pydantic>=2.9
+pydantic-settings>=2.6
+python-dotenv>=1.0
+pyyaml>=6.0
+psycopg2-binary>=2.9
+tqdm>=4.66
+requests>=2.31
