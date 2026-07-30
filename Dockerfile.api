@@ -3,8 +3,13 @@ FROM python:3.11-slim
 
 WORKDIR /app
 
-COPY requirements.txt ./
-RUN pip install --no-cache-dir -r requirements.txt
+# 이 VM엔 GPU가 없는데, index 지정 없이 pip install torch를 하면 Linux에서는 안 쓰는
+# CUDA 라이브러리(nvidia-cublas 등)까지 딸려와 수 GB가 낭비된다 — sentence-transformers가
+# 요구하는 torch를 CPU 전용 wheel로 먼저 설치해서 그 버전을 그대로 재사용하게 한다.
+RUN pip install --no-cache-dir torch --index-url https://download.pytorch.org/whl/cpu
+
+COPY requirements-api.txt ./
+RUN pip install --no-cache-dir -r requirements-api.txt
 
 # 컨테이너 재기동/재배포 때마다 다시 받지 않도록 임베딩 모델을 빌드 타임에 미리 캐시해둔다.
 RUN python -c "from sentence_transformers import SentenceTransformer; SentenceTransformer('nlpai-lab/KURE-v1')"
