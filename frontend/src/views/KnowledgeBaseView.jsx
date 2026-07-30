@@ -1,6 +1,7 @@
 import { Fragment, useEffect, useState } from 'react'
+import { API_BASE_URL } from '../config.js'
 
-const KNOWLEDGE_BASE_URL = 'http://localhost:8000/knowledge-base'
+const KNOWLEDGE_BASE_URL = `${API_BASE_URL}/knowledge-base`
 const ANSWER_CACHE_URL = `${KNOWLEDGE_BASE_URL}/answer-cache`
 
 const inputStyle = {

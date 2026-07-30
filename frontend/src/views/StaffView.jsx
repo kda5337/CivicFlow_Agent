@@ -12,8 +12,9 @@ import DraftView from './DraftView.jsx'
 import ReviewView from './ReviewView.jsx'
 import { VIEWS } from '../viewsConfig.js'
 import { useInquiryPipeline } from '../useInquiryPipeline.js'
+import { API_BASE_URL } from '../config.js'
 
-const DEPARTMENTS_URL = 'http://localhost:8000/departments'
+const DEPARTMENTS_URL = `${API_BASE_URL}/departments`
 const STAFF_DEPARTMENT_KEY = 'civicflow_staff_department'
 
 // 담당자용 업무 페이지(/staff). 관리자용 화면(App.jsx)과 똑같은 문의 처리 파이프라인을

@@ -1,7 +1,8 @@
 import { useEffect, useState } from 'react'
 import { priorityBadgeClass } from '../priorityBadge.js'
+import { API_BASE_URL } from '../config.js'
 
-const DEPARTMENTS_URL = 'http://localhost:8000/departments'
+const DEPARTMENTS_URL = `${API_BASE_URL}/departments`
 
 // 실제 classify_node + rules_node 결과(state.classification, state.rule_flags)를
 // 그대로 보여준다. 목업에 있던 "분류 신뢰도"(가짜 91% 수치)는 실제 API에 없는

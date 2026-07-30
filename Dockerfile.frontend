@@ -1,0 +1,22 @@
+# syntax=docker/dockerfile:1
+FROM node:20-slim AS build
+
+WORKDIR /app
+
+COPY frontend/package.json frontend/package-lock.json ./
+RUN npm ci
+
+COPY frontend/ .
+
+# 빈 문자열이면 config.js가 상대경로("/inquiries" 등)를 쓰게 되고, 같은 origin의
+# nginx가 그 경로들을 api 컨테이너로 프록시한다(로컬 개발의 localhost:8000 하드코딩과 달리
+# 배포 환경에서는 브라우저 기준 주소가 서버 자신이 아니므로 절대주소를 쓸 수 없다).
+ENV VITE_API_BASE_URL=""
+RUN npm run build
+
+FROM nginx:1.27-alpine
+
+COPY --from=build /app/dist /usr/share/nginx/html
+COPY frontend/nginx.conf /etc/nginx/conf.d/default.conf
+
+EXPOSE 80

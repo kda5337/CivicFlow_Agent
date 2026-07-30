@@ -1,8 +1,9 @@
 import { useEffect, useState } from 'react'
 import { priorityBadgeClass } from '../priorityBadge.js'
 import { isDelayed } from '../delay.js'
+import { API_BASE_URL } from '../config.js'
 
-const SUBMISSIONS_URL = 'http://localhost:8000/submissions'
+const SUBMISSIONS_URL = `${API_BASE_URL}/submissions`
 
 // citizen_submissions.inquiry_type이 실제로 가질 수 있는 7개 값(classify_node 기준).
 // 목업에 있던 "수강신청/장학금/시설민원/증명서/기타"는 이 시스템의 실제 분류 체계가

@@ -1,9 +1,10 @@
 import { useState } from 'react'
 import { nextPipelineView, previousPipelineView } from './viewsConfig.js'
+import { API_BASE_URL } from './config.js'
 
-const API_URL = 'http://localhost:8000/inquiries'
-const REGENERATE_URL = 'http://localhost:8000/inquiries/regenerate-answer'
-const SUBMISSIONS_URL = 'http://localhost:8000/submissions'
+const API_URL = `${API_BASE_URL}/inquiries`
+const REGENERATE_URL = `${API_BASE_URL}/inquiries/regenerate-answer`
+const SUBMISSIONS_URL = `${API_BASE_URL}/submissions`
 
 // 관리자용 화면(App.jsx)과 담당자용 화면(StaffView.jsx)이 똑같은 문의 처리 파이프라인
 // (문의 접수함 → "AI 처리" → 분석 → RAG → 초안 → 검토)을 쓰기 때문에 그 상태와 로직을

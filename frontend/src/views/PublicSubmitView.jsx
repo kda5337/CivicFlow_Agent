@@ -11,6 +11,7 @@ import {
   Inbox,
   Sparkles,
 } from "lucide-react"
+import { API_BASE_URL } from "../config.js"
 
 // 실제 시민(사용자)이 접속하는 독립 페이지 (/submit). 내부 담당자용 화면(Sidebar/
 // Topbar/Pipeline)과 완전히 분리되어 있다 — App.jsx가 경로를 보고 이 컴포넌트만
@@ -21,7 +22,7 @@ import {
 // 채우므로(status가 '검토중'이 됨), "문의 유형 자동 확인"/"처리 상태 조회"는 이미
 // 저장된 그 결과를 보여주는 화면이지 프론트에서 흉내낸 가짜 분류가 아니다. 담당부서를
 // 고치는 버튼은 담당자 내부 화면(AI 분석 결과)에만 있고, 여기서는 결과만 보여준다.
-const SUBMIT_URL = "http://localhost:8000/submissions"
+const SUBMIT_URL = `${API_BASE_URL}/submissions`
 const VISITOR_NAME_KEY = "civicflow_visitor_name"
 const SEEN_ANSWERS_KEY_PREFIX = "civicflow_seen_answers_"
 // 페이지를 켜둔 채로 있어도 담당자가 답변을 완료하면 배지가 뜨도록, 이 간격으로
