@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react'
+import { API_BASE_URL } from '../config.js'
 
-const DEPARTMENTS_URL = 'http://localhost:8000/departments'
+const DEPARTMENTS_URL = `${API_BASE_URL}/departments`
 
 export const ALL_DEPARTMENTS = '전체'
 

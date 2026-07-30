@@ -1,8 +1,9 @@
 import { Fragment, useEffect, useState } from 'react'
 import { priorityBadgeClass } from '../priorityBadge.js'
 import DepartmentFilter, { ALL_DEPARTMENTS } from '../components/DepartmentFilter.jsx'
+import { API_BASE_URL } from '../config.js'
 
-const SUBMISSIONS_URL = 'http://localhost:8000/submissions'
+const SUBMISSIONS_URL = `${API_BASE_URL}/submissions`
 
 // 담당자가 이미 답변까지 확정한 문의(citizen_submissions.status === '답변완료')만
 // 모아 보여주는 모니터링 화면. GET /submissions는 필터링 기능이 없어 전체를 받아온

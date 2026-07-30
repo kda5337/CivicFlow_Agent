@@ -2,8 +2,9 @@ import { useEffect, useState } from 'react'
 import { statusBadgeClass } from '../statusBadge.js'
 import { isDelayed } from '../delay.js'
 import DepartmentFilter, { ALL_DEPARTMENTS } from '../components/DepartmentFilter.jsx'
+import { API_BASE_URL } from '../config.js'
 
-const SUBMISSIONS_URL = 'http://localhost:8000/submissions'
+const SUBMISSIONS_URL = `${API_BASE_URL}/submissions`
 
 // 담당자가 사용자용 접수 페이지(/submit)로 들어온 문의를 조회하는 내부 화면.
 // 접수 직후 서버가 바로 classify_node+rules_node를 돌려두므로, 목록에 문의유형/

@@ -1,0 +1,26 @@
+.git/
+.venv/
+venv/
+__pycache__/
+*.pyc
+.env
+
+node_modules/
+frontend/dist/
+frontend/.vite/
+
+backend/chroma_db/
+backend/.mypy_cache/
+backend/.pytest_cache/
+backend/.ruff_cache/
+
+# ingest에 필요한 data/knowledge_base만 이미지에 넣는다 — 이 둘은 학습/평가용 원본
+# 데이터라 용량만 크고(28M/44M) 런타임에 쓰이지 않는다.
+data/ai_hub/
+data/self_collected/
+backend/self_collected/
+
+docs/
+eval/
+test/
+.claude/

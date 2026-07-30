@@ -1,0 +1,21 @@
+services:
+  api:
+    image: ${API_IMAGE:-ghcr.io/kda5337/civicflow_agent/api:latest}
+    container_name: civicflow-api
+    ports:
+      # VM(lumi-agent)에 이미 다른 프로젝트가 호스트 8000을 쓰고 있어 8001로 매핑.
+      - "8001:8000"
+    env_file:
+      - .env
+    volumes:
+      - ./chroma_db:/app/backend/chroma_db
+    restart: unless-stopped
+
+  frontend:
+    image: ${FRONTEND_IMAGE:-ghcr.io/kda5337/civicflow_agent/frontend:latest}
+    container_name: civicflow-frontend
+    ports:
+      - "8080:80"
+    depends_on:
+      - api
+    restart: unless-stopped

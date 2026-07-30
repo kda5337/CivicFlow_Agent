@@ -1,0 +1,22 @@
+# syntax=docker/dockerfile:1
+FROM python:3.11-slim
+
+WORKDIR /app
+
+COPY requirements.txt ./
+RUN pip install --no-cache-dir -r requirements.txt
+
+# 컨테이너 재기동/재배포 때마다 다시 받지 않도록 임베딩 모델을 빌드 타임에 미리 캐시해둔다.
+RUN python -c "from sentence_transformers import SentenceTransformer; SentenceTransformer('nlpai-lab/KURE-v1')"
+
+# backend/app/rag/ingest.py, backend/app/graph/nodes/rules.py가 각각
+# 저장소 루트 기준 상대경로(data/knowledge_base, backend/rules.yaml)로 파일을 찾으므로
+# 실제 저장소 레이아웃을 그대로 유지한다(backend/, data/knowledge_base 형제 디렉터리 구조).
+COPY backend/ backend/
+COPY data/knowledge_base/ data/knowledge_base/
+
+WORKDIR /app/backend
+
+EXPOSE 8000
+
+CMD ["uvicorn", "app.main:app", "--host", "0.0.0.0", "--port", "8000"]

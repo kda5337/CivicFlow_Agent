@@ -3,7 +3,7 @@ __pycache__/
 .venv/
 venv/
 .env
-backend/chroma_db/
+backend/self_collected/
 node_modules/
 dist/
 docs/
