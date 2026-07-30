@@ -23,8 +23,13 @@ def get_llm(temperature: float = 0.0):
     return primary.with_fallbacks([fallback])
 
 
+@lru_cache
 def get_structured_llm(schema: type[T], temperature: float = 0.0):
-    """구조화 출력(JSON) 노드용. 두 모델 각각에 구조화 출력을 씌운 뒤 fallback을 연결한다."""
+    """구조화 출력(JSON) 노드용. 두 모델 각각에 구조화 출력을 씌운 뒤 fallback을 연결한다.
+
+    ChatUpstage 생성 자체가 매번 1~2초 걸려서(내부적으로 클라이언트를 새로 구성하는 비용),
+    get_llm처럼 캐싱하지 않으면 호출할 때마다 이 비용을 그대로 지불하게 된다.
+    """
     settings = get_settings()
     primary = _build_chat(settings.llm_model_primary, temperature).with_structured_output(schema)
     fallback = _build_chat(settings.llm_model_fallback, temperature).with_structured_output(schema)

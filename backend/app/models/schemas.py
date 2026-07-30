@@ -25,6 +25,23 @@ class KnowledgeBaseItem(BaseModel):
     answer: str
 
 
+class AnswerCacheItem(BaseModel):
+    """지식베이스 관리 화면의 '답변 캐시' 섹션에 보여줄 항목 하나.
+
+    FAQ 출처들과는 별개다 — RAG 근거 문서가 아니라, 담당자가 검토·확정한 답변을
+    비슷한 문의에 재사용하기 위한 캐시(answer_cache 테이블)의 내용이다."""
+
+    id: str
+    raw_text: str
+    final_answer: str
+    sources: list[str] = Field(default_factory=list)
+    submission_id: Optional[str] = Field(
+        default=None,
+        description="실제 확정 문의에서 왔으면 그 citizen_submissions.id, 시드 데이터로 채워진 항목이면 None",
+    )
+    created_at: str
+
+
 class KnowledgeBaseItemWrite(BaseModel):
     """지식베이스 항목 추가/수정 요청. 이전 값을 남기지 않고 그대로 덮어쓴다."""
 
@@ -105,6 +122,60 @@ class InquiryRequest(BaseModel):
         "등록 시점에 classify_node+rules_node가 이미 검증해 둔 것)를 그대로 가져와 RAG 검색+답변 "
         "생성만 수행한다.",
     )
+    is_test: bool = Field(
+        default=False,
+        description="관리자용 테스트 섹션에서 보낸 요청이면 True. 전체 파이프라인을 실행하되 "
+        "check_cache 조회를 건너뛰고(항상 처음부터 실행) store_cache 저장도 생략해, 테스트 "
+        "데이터가 실제 의미 캐시(query_cache)를 오염시키지 않게 한다.",
+    )
+    use_answer_cache: Optional[bool] = Field(
+        default=None,
+        description="담당자가 POST /inquiries/answer-cache-check로 캐시 히트를 미리 확인한 뒤 내리는 "
+        "선택. True면 그 캐시 답변을 그대로 쓰고 retrieve_node/generate_node를 건너뛴다. False면 "
+        "캐시가 있어도 무시하고 새로 생성한다. None(기본값)이면 자동으로 캐시를 조회해 있으면 쓴다 "
+        "(사전 확인 없이 호출하는 기존 경로와의 하위 호환용).",
+    )
+
+
+class AnswerCacheCheckRequest(BaseModel):
+    """담당자가 'AI 처리 →'를 누르기 전, 이 문의와 비슷한 과거 문의에 이미 확정된 답변이
+    있는지 미리 물어볼 때 보내는 요청. DB에는 아무것도 쓰지 않는다."""
+
+    submission_id: str
+
+
+class AnswerCacheCheckResponse(BaseModel):
+    """answer-cache-check의 응답. cache_hit이 True일 때만 final_answer/sources가 채워진다."""
+
+    cache_hit: bool
+    final_answer: Optional[str] = None
+    sources: list[str] = Field(default_factory=list)
+
+
+class SubmissionRelevanceCheckRequest(BaseModel):
+    """사용자용 문의 접수 페이지에서 등록 전에 관련성만 먼저 물어볼 때 보내는 요청.
+
+    DB에는 아무것도 쓰지 않는다 — 프론트가 이 응답을 받아 "적절성 확인 중" 화면에서
+    "분류 중" 화면으로 전환한 뒤, 이어서 POST /submissions(skip_relevance_check=True)를
+    호출해 분류+저장을 마친다."""
+
+    raw_text: str
+
+
+class SubmissionCacheCheckRequest(BaseModel):
+    """등록 전에 분류 캐시(query_cache) 히트 여부만 먼저 물어볼 때 보내는 요청.
+    DB에는 아무것도 쓰지 않는다."""
+
+    raw_text: str
+
+
+class SubmissionCacheCheckResponse(BaseModel):
+    """cache-check의 응답. 히트면 프론트가 관련성 판별(check-relevance) 호출 자체를
+    건너뛴다 — query_cache 항목은 저장될 때 이미 관련성 검증을 통과한 것만 남으므로
+    다시 확인할 필요가 없다. (화면 전환 자체는 그대로 유지하고 그 시간만 짧은 연출용
+    지연으로 대체한다 — 사용자에게는 여전히 "확인 → 분류 → 접수 완료" 순서로 보인다.)"""
+
+    cache_hit: bool
 
 
 class CitizenSubmissionRequest(BaseModel):
@@ -114,6 +185,11 @@ class CitizenSubmissionRequest(BaseModel):
     name: str
     contact: str
     raw_text: str
+    skip_relevance_check: bool = Field(
+        default=False,
+        description="POST /submissions/check-relevance로 이미 관련성을 확인한 뒤 이어서 호출하는 "
+        "경우 True. check_relevance를 다시 호출하지 않고 바로 분류로 넘어간다.",
+    )
 
 
 class CitizenSubmission(BaseModel):
@@ -146,6 +222,15 @@ class CitizenSubmission(BaseModel):
     )
     matched_rules: list[str] = Field(default_factory=list, description="rule_flags.matched_rules (규칙 엔진 매칭 경로)")
     final_answer: Optional[str] = None
+    sources: list[str] = Field(
+        default_factory=list,
+        description="final_answer을 만들 때 근거로 쓴 출처 라벨 목록 (확정 전엔 빈 배열)",
+    )
+    from_cache: bool = Field(
+        default=False,
+        description="접수 시점에 query_cache 히트(유사도 0.90 이상)로 분류 결과를 재사용했는지 여부. "
+        "classify_node+rules_node를 새로 실행하지 않고 과거 결과를 그대로 가져온 경우 True.",
+    )
 
 
 class SubmissionClassificationUpdate(BaseModel):
@@ -166,9 +251,14 @@ class SubmissionClassificationUpdate(BaseModel):
 
 class SubmissionAnswerUpdate(BaseModel):
     """담당자가 답변 초안 화면에서 '최종 답변으로 저장'을 눌렀을 때 보내는 요청.
-    status는 이 호출로 자동으로 '답변완료'가 된다."""
+    status는 이 호출로 자동으로 '답변완료'가 된다.
+
+    sources를 함께 저장해두는 이유: 이 확정 답변이 answer_cache에 등록되어 나중에
+    비슷한 문의가 오면 재사용되는데, 그때 화면에 "이 답변은 이 출처로 만들어졌다"를
+    같이 보여주려면 답변 본문과 분리된 출처 라벨이 함께 남아있어야 한다."""
 
     final_answer: str
+    sources: list[str] = Field(default_factory=list)
 
 
 class RegenerateAnswerRequest(BaseModel):
@@ -194,7 +284,7 @@ class InquiryResponse(BaseModel):
     raw_text: str
     relevance_check: Optional[RelevanceCheckResult] = None
     intake_reply: Optional[str] = Field(
-        default=None, description="발랄한 페르소나로 생성한 재질문 요청/환영+요약 답변"
+        default=None, description="(관련없음 판정 시) 발랄한 페르소나로 생성한 재질문 요청 답변"
     )
     classification: Optional[ClassificationResult] = None
     rule_flags: dict = Field(default_factory=dict)

@@ -12,6 +12,9 @@ export const VIEWS = [
   { key: 'draft', label: '답변 초안 편집', num: '06', group: '문의 처리' },
   { key: 'review', label: '검토 완료', num: '07', group: '문의 처리' },
   { key: 'kb', label: '지식베이스 관리', num: '08', group: '지식 관리' },
+  // 관리자 전용 테스트 섹션 — 문의 접수함/citizen_submissions와 무관하게 파이프라인만
+  // 시험해보는 용도라 별도 그룹으로 둔다. StaffView.jsx의 STAFF_VIEWS 필터에서 제외된다.
+  { key: 'test', label: '테스트 (문의 처리)', num: '09', group: '테스트' },
 ]
 
 export const VIEW_TITLES = Object.fromEntries(VIEWS.map((v) => [v.key, v.label]))
@@ -29,6 +32,7 @@ export const VIEW_STEP_MAP = {
   draft: 2,
   review: 3,
   kb: -1,
+  test: -1,
 }
 
 // 문의 처리 화면들을 순서대로 두어, "다음 단계"/"이전 단계" 버튼이 항상 정확한

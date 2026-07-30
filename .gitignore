@@ -6,3 +6,4 @@ venv/
 backend/chroma_db/
 node_modules/
 dist/
+docs/

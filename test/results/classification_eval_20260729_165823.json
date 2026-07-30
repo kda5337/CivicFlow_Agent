@@ -1,0 +1,1114 @@
+{
+  "summary": {
+    "total_cases": 50,
+    "error_count": 0,
+    "error_rate": 0.0,
+    "department_accuracy": 0.84,
+    "inquiry_type_accuracy": 0.8,
+    "both_correct_accuracy": 0.8,
+    "latency_sec": {
+      "avg": 11.148,
+      "p50": 10.279,
+      "max": 27.933,
+      "min": 7.609
+    },
+    "tokens": {
+      "total_sum": 130772,
+      "avg_per_case": 2615.4
+    },
+    "per_department": {
+      "IT지원팀": {
+        "total": 5,
+        "dept_correct": 5,
+        "type_correct": 5
+      },
+      "정산팀": {
+        "total": 5,
+        "dept_correct": 5,
+        "type_correct": 5
+      },
+      "물류팀": {
+        "total": 5,
+        "dept_correct": 4,
+        "type_correct": 4
+      },
+      "행정팀": {
+        "total": 5,
+        "dept_correct": 0,
+        "type_correct": 0
+      },
+      "회원관리팀": {
+        "total": 5,
+        "dept_correct": 4,
+        "type_correct": 2
+      },
+      "법무팀": {
+        "total": 5,
+        "dept_correct": 5,
+        "type_correct": 5
+      },
+      "안전관리팀": {
+        "total": 5,
+        "dept_correct": 5,
+        "type_correct": 5
+      },
+      "마케팅팀": {
+        "total": 5,
+        "dept_correct": 4,
+        "type_correct": 4
+      },
+      "고객지원총괄팀": {
+        "total": 5,
+        "dept_correct": 5,
+        "type_correct": 5
+      },
+      "고객센터": {
+        "total": 5,
+        "dept_correct": 5,
+        "type_correct": 5
+      }
+    },
+    "errors": []
+  },
+  "results": [
+    {
+      "id": "IT-01",
+      "text": "며칠 전부터 로그인이 계속 안 됩니다. 비밀번호는 맞는데 서버 오류라고만 떠요.",
+      "expected_department": "IT지원팀",
+      "actual_department": "IT지원팀",
+      "department_correct": true,
+      "expected_inquiry_type": "오류/장애",
+      "actual_inquiry_type": "오류/장애",
+      "inquiry_type_correct": true,
+      "matched_rules": [
+        "IT장애_분류",
+        "계정_회원_분류",
+        "기본_오류장애",
+        "기본_우선순위"
+      ],
+      "latency_sec": 23.595,
+      "prompt_tokens": 2335,
+      "completion_tokens": 197,
+      "total_tokens": 2532,
+      "llm_calls": 4,
+      "error": null
+    },
+    {
+      "id": "IT-02",
+      "text": "앱이 갑자기 먹통이 돼서 아무것도 안 눌립니다. 재설치해도 그대로예요.",
+      "expected_department": "IT지원팀",
+      "actual_department": "IT지원팀",
+      "department_correct": true,
+      "expected_inquiry_type": "오류/장애",
+      "actual_inquiry_type": "오류/장애",
+      "inquiry_type_correct": true,
+      "matched_rules": [
+        "IT장애_분류",
+        "기본_오류장애",
+        "기본_우선순위"
+      ],
+      "latency_sec": 11.45,
+      "prompt_tokens": 2319,
+      "completion_tokens": 223,
+      "total_tokens": 2542,
+      "llm_calls": 4,
+      "error": null
+    },
+    {
+      "id": "IT-03",
+      "text": "사이트가 안 열려요. 오늘 하루 종일 접속 자체가 안 됩니다.",
+      "expected_department": "IT지원팀",
+      "actual_department": "IT지원팀",
+      "department_correct": true,
+      "expected_inquiry_type": "오류/장애",
+      "actual_inquiry_type": "오류/장애",
+      "inquiry_type_correct": true,
+      "matched_rules": [
+        "기본_오류장애",
+        "긴급도_높음",
+        "기본_우선순위"
+      ],
+      "latency_sec": 10.378,
+      "prompt_tokens": 2321,
+      "completion_tokens": 218,
+      "total_tokens": 2539,
+      "llm_calls": 4,
+      "error": null
+    },
+    {
+      "id": "IT-04",
+      "text": "인증번호 받는 화면에서 서버 오류 메시지만 뜨고 다음 단계로 안 넘어갑니다.",
+      "expected_department": "IT지원팀",
+      "actual_department": "IT지원팀",
+      "department_correct": true,
+      "expected_inquiry_type": "오류/장애",
+      "actual_inquiry_type": "오류/장애",
+      "inquiry_type_correct": true,
+      "matched_rules": [
+        "IT장애_분류",
+        "기본_오류장애",
+        "기본_우선순위"
+      ],
+      "latency_sec": 9.829,
+      "prompt_tokens": 2315,
+      "completion_tokens": 215,
+      "total_tokens": 2530,
+      "llm_calls": 4,
+      "error": null
+    },
+    {
+      "id": "IT-05",
+      "text": "결제 페이지에 들어가면 접속불가 오류가 뜹니다. 언제쯤 복구되나요?",
+      "expected_department": "IT지원팀",
+      "actual_department": "IT지원팀",
+      "department_correct": true,
+      "expected_inquiry_type": "오류/장애",
+      "actual_inquiry_type": "오류/장애",
+      "inquiry_type_correct": true,
+      "matched_rules": [
+        "IT장애_분류",
+        "기본_오류장애",
+        "기본_우선순위"
+      ],
+      "latency_sec": 9.251,
+      "prompt_tokens": 2328,
+      "completion_tokens": 194,
+      "total_tokens": 2522,
+      "llm_calls": 4,
+      "error": null
+    },
+    {
+      "id": "PAY-01",
+      "text": "주문을 취소했는데 환불이 아직 안 됐습니다. 확인 부탁드려요.",
+      "expected_department": "정산팀",
+      "actual_department": "정산팀",
+      "department_correct": true,
+      "expected_inquiry_type": "취소/환불",
+      "actual_inquiry_type": "취소/환불",
+      "inquiry_type_correct": true,
+      "matched_rules": [
+        "결제_정산_분류",
+        "기본_취소환불",
+        "기본_우선순위"
+      ],
+      "latency_sec": 11.125,
+      "prompt_tokens": 2541,
+      "completion_tokens": 272,
+      "total_tokens": 2813,
+      "llm_calls": 4,
+      "error": null
+    },
+    {
+      "id": "PAY-02",
+      "text": "결제가 실수로 두 번 됐어요. 이중결제된 금액 취소해 주세요.",
+      "expected_department": "정산팀",
+      "actual_department": "정산팀",
+      "department_correct": true,
+      "expected_inquiry_type": "취소/환불",
+      "actual_inquiry_type": "취소/환불",
+      "inquiry_type_correct": true,
+      "matched_rules": [
+        "결제_정산_분류",
+        "기본_취소환불",
+        "기본_우선순위"
+      ],
+      "latency_sec": 9.013,
+      "prompt_tokens": 2457,
+      "completion_tokens": 291,
+      "total_tokens": 2748,
+      "llm_calls": 4,
+      "error": null
+    },
+    {
+      "id": "PAY-03",
+      "text": "반품 신청한 지 일주일이 지났는데 환불 처리가 하나도 안 됩니다.",
+      "expected_department": "정산팀",
+      "actual_department": "정산팀",
+      "department_correct": true,
+      "expected_inquiry_type": "취소/환불",
+      "actual_inquiry_type": "취소/환불",
+      "inquiry_type_correct": true,
+      "matched_rules": [
+        "결제_정산_분류",
+        "기본_취소환불",
+        "기본_우선순위"
+      ],
+      "latency_sec": 27.933,
+      "prompt_tokens": 2580,
+      "completion_tokens": 421,
+      "total_tokens": 3001,
+      "llm_calls": 4,
+      "error": null
+    },
+    {
+      "id": "PAY-04",
+      "text": "결제 오류로 실제 금액보다 더 많이 청구됐어요. 과오납된 부분 환불 요청합니다.",
+      "expected_department": "정산팀",
+      "actual_department": "정산팀",
+      "department_correct": true,
+      "expected_inquiry_type": "취소/환불",
+      "actual_inquiry_type": "취소/환불",
+      "inquiry_type_correct": true,
+      "matched_rules": [
+        "결제_정산_분류",
+        "기본_취소환불",
+        "기본_우선순위"
+      ],
+      "latency_sec": 18.401,
+      "prompt_tokens": 2391,
+      "completion_tokens": 282,
+      "total_tokens": 2673,
+      "llm_calls": 4,
+      "error": null
+    },
+    {
+      "id": "PAY-05",
+      "text": "쿠폰 할인이 적용 안 된 채로 결제됐어요. 차액만큼 환불해 주실 수 있나요?",
+      "expected_department": "정산팀",
+      "actual_department": "정산팀",
+      "department_correct": true,
+      "expected_inquiry_type": "취소/환불",
+      "actual_inquiry_type": "취소/환불",
+      "inquiry_type_correct": true,
+      "matched_rules": [
+        "결제_정산_분류",
+        "기본_취소환불",
+        "기본_우선순위"
+      ],
+      "latency_sec": 13.986,
+      "prompt_tokens": 2367,
+      "completion_tokens": 214,
+      "total_tokens": 2581,
+      "llm_calls": 4,
+      "error": null
+    },
+    {
+      "id": "LOG-01",
+      "text": "배송이 3일째 그대로 멈춰 있습니다. 무슨 일이 있는 건가요?",
+      "expected_department": "물류팀",
+      "actual_department": "물류팀",
+      "department_correct": true,
+      "expected_inquiry_type": "오류/장애",
+      "actual_inquiry_type": "오류/장애",
+      "inquiry_type_correct": true,
+      "matched_rules": [
+        "배송_물류_분류",
+        "기본_오류장애",
+        "기본_우선순위"
+      ],
+      "latency_sec": 13.927,
+      "prompt_tokens": 2694,
+      "completion_tokens": 302,
+      "total_tokens": 2996,
+      "llm_calls": 4,
+      "error": null
+    },
+    {
+      "id": "LOG-02",
+      "text": "택배를 받은 적이 없는데 배송완료로 떠 있어요.",
+      "expected_department": "물류팀",
+      "actual_department": "물류팀",
+      "department_correct": true,
+      "expected_inquiry_type": "오류/장애",
+      "actual_inquiry_type": "오류/장애",
+      "inquiry_type_correct": true,
+      "matched_rules": [
+        "배송_물류_분류",
+        "기본_오류장애",
+        "기본_우선순위"
+      ],
+      "latency_sec": 12.465,
+      "prompt_tokens": 2574,
+      "completion_tokens": 259,
+      "total_tokens": 2833,
+      "llm_calls": 4,
+      "error": null
+    },
+    {
+      "id": "LOG-03",
+      "text": "상품이 박스째 찌그러지고 파손된 상태로 도착했습니다.",
+      "expected_department": "물류팀",
+      "actual_department": "고객지원총괄팀",
+      "department_correct": false,
+      "expected_inquiry_type": "오류/장애",
+      "actual_inquiry_type": "불만/신고",
+      "inquiry_type_correct": false,
+      "matched_rules": [
+        "기본_불만신고",
+        "기본_우선순위"
+      ],
+      "latency_sec": 11.592,
+      "prompt_tokens": 2538,
+      "completion_tokens": 357,
+      "total_tokens": 2895,
+      "llm_calls": 4,
+      "error": null
+    },
+    {
+      "id": "LOG-04",
+      "text": "다른 사람 주소로 오배송된 것 같아요. 확인 부탁드립니다.",
+      "expected_department": "물류팀",
+      "actual_department": "물류팀",
+      "department_correct": true,
+      "expected_inquiry_type": "오류/장애",
+      "actual_inquiry_type": "오류/장애",
+      "inquiry_type_correct": true,
+      "matched_rules": [
+        "배송_물류_분류",
+        "기본_오류장애",
+        "기본_우선순위"
+      ],
+      "latency_sec": 10.752,
+      "prompt_tokens": 2747,
+      "completion_tokens": 290,
+      "total_tokens": 3037,
+      "llm_calls": 4,
+      "error": null
+    },
+    {
+      "id": "LOG-05",
+      "text": "배송 조회가 이틀째 업데이트가 안 되고 그대로예요.",
+      "expected_department": "물류팀",
+      "actual_department": "물류팀",
+      "department_correct": true,
+      "expected_inquiry_type": "오류/장애",
+      "actual_inquiry_type": "오류/장애",
+      "inquiry_type_correct": true,
+      "matched_rules": [
+        "배송_물류_분류",
+        "기본_오류장애",
+        "기본_우선순위"
+      ],
+      "latency_sec": 9.832,
+      "prompt_tokens": 2294,
+      "completion_tokens": 210,
+      "total_tokens": 2504,
+      "llm_calls": 4,
+      "error": null
+    },
+    {
+      "id": "ADM-01",
+      "text": "서류 발급을 신청했는데 처리 상태를 확인할 수가 없습니다.",
+      "expected_department": "행정팀",
+      "actual_department": "고객센터",
+      "department_correct": false,
+      "expected_inquiry_type": "신청/등록",
+      "actual_inquiry_type": "안내/조회",
+      "inquiry_type_correct": false,
+      "matched_rules": [
+        "기본_안내조회",
+        "기본_우선순위"
+      ],
+      "latency_sec": 10.854,
+      "prompt_tokens": 2291,
+      "completion_tokens": 224,
+      "total_tokens": 2515,
+      "llm_calls": 4,
+      "error": null
+    },
+    {
+      "id": "ADM-02",
+      "text": "등록 신청서를 제출했는데 접수가 됐는지 확인이 안 됩니다.",
+      "expected_department": "행정팀",
+      "actual_department": "고객센터",
+      "department_correct": false,
+      "expected_inquiry_type": "신청/등록",
+      "actual_inquiry_type": "안내/조회",
+      "inquiry_type_correct": false,
+      "matched_rules": [
+        "기본_안내조회",
+        "기본_우선순위"
+      ],
+      "latency_sec": 10.142,
+      "prompt_tokens": 2354,
+      "completion_tokens": 247,
+      "total_tokens": 2601,
+      "llm_calls": 4,
+      "error": null
+    },
+    {
+      "id": "ADM-03",
+      "text": "증빙서류를 첨부해서 신청했는데 반려 사유를 알려주지 않았습니다.",
+      "expected_department": "행정팀",
+      "actual_department": "고객지원총괄팀",
+      "department_correct": false,
+      "expected_inquiry_type": "신청/등록",
+      "actual_inquiry_type": "불만/신고",
+      "inquiry_type_correct": false,
+      "matched_rules": [
+        "기본_불만신고",
+        "기본_우선순위"
+      ],
+      "latency_sec": 10.39,
+      "prompt_tokens": 2302,
+      "completion_tokens": 248,
+      "total_tokens": 2550,
+      "llm_calls": 4,
+      "error": null
+    },
+    {
+      "id": "ADM-04",
+      "text": "온라인 신청이 계속 오류가 나서 접수 자체가 안 됩니다.",
+      "expected_department": "행정팀",
+      "actual_department": "IT지원팀",
+      "department_correct": false,
+      "expected_inquiry_type": "신청/등록",
+      "actual_inquiry_type": "오류/장애",
+      "inquiry_type_correct": false,
+      "matched_rules": [
+        "IT장애_분류",
+        "기본_오류장애",
+        "기본_우선순위"
+      ],
+      "latency_sec": 10.185,
+      "prompt_tokens": 2298,
+      "completion_tokens": 250,
+      "total_tokens": 2548,
+      "llm_calls": 4,
+      "error": null
+    },
+    {
+      "id": "ADM-05",
+      "text": "발급 신청한 서류가 열흘이 지나도 도착하지 않았습니다.",
+      "expected_department": "행정팀",
+      "actual_department": "고객지원총괄팀",
+      "department_correct": false,
+      "expected_inquiry_type": "신청/등록",
+      "actual_inquiry_type": "불만/신고",
+      "inquiry_type_correct": false,
+      "matched_rules": [
+        "기본_불만신고",
+        "기본_우선순위"
+      ],
+      "latency_sec": 10.239,
+      "prompt_tokens": 2294,
+      "completion_tokens": 254,
+      "total_tokens": 2548,
+      "llm_calls": 4,
+      "error": null
+    },
+    {
+      "id": "MEM-01",
+      "text": "비밀번호를 변경하려는데 인증 메일이 오지 않습니다.",
+      "expected_department": "회원관리팀",
+      "actual_department": "회원관리팀",
+      "department_correct": true,
+      "expected_inquiry_type": "변경/정정",
+      "actual_inquiry_type": "오류/장애",
+      "inquiry_type_correct": false,
+      "matched_rules": [
+        "계정_회원_분류",
+        "기본_오류장애",
+        "기본_우선순위"
+      ],
+      "latency_sec": 10.447,
+      "prompt_tokens": 2383,
+      "completion_tokens": 299,
+      "total_tokens": 2682,
+      "llm_calls": 4,
+      "error": null
+    },
+    {
+      "id": "MEM-02",
+      "text": "회원 탈퇴를 신청했는데 아직도 로그인이 됩니다.",
+      "expected_department": "회원관리팀",
+      "actual_department": "정산팀",
+      "department_correct": false,
+      "expected_inquiry_type": "변경/정정",
+      "actual_inquiry_type": "취소/환불",
+      "inquiry_type_correct": false,
+      "matched_rules": [
+        "기본_취소환불",
+        "기본_우선순위"
+      ],
+      "latency_sec": 10.034,
+      "prompt_tokens": 2302,
+      "completion_tokens": 270,
+      "total_tokens": 2572,
+      "llm_calls": 4,
+      "error": null
+    },
+    {
+      "id": "MEM-03",
+      "text": "개인정보 수정 요청을 했는데 며칠째 반영이 안 되고 있어요.",
+      "expected_department": "회원관리팀",
+      "actual_department": "회원관리팀",
+      "department_correct": true,
+      "expected_inquiry_type": "변경/정정",
+      "actual_inquiry_type": "변경/정정",
+      "inquiry_type_correct": true,
+      "matched_rules": [
+        "계정_회원_분류",
+        "기본_변경정정",
+        "기본_우선순위"
+      ],
+      "latency_sec": 10.004,
+      "prompt_tokens": 2355,
+      "completion_tokens": 245,
+      "total_tokens": 2600,
+      "llm_calls": 4,
+      "error": null
+    },
+    {
+      "id": "MEM-04",
+      "text": "아이디를 잊어버렸는데 찾기 기능도 작동하지 않습니다.",
+      "expected_department": "회원관리팀",
+      "actual_department": "회원관리팀",
+      "department_correct": true,
+      "expected_inquiry_type": "변경/정정",
+      "actual_inquiry_type": "오류/장애",
+      "inquiry_type_correct": false,
+      "matched_rules": [
+        "계정_회원_분류",
+        "기본_오류장애",
+        "기본_우선순위"
+      ],
+      "latency_sec": 9.349,
+      "prompt_tokens": 2285,
+      "completion_tokens": 221,
+      "total_tokens": 2506,
+      "llm_calls": 4,
+      "error": null
+    },
+    {
+      "id": "MEM-05",
+      "text": "휴대폰 번호를 변경했는데 계정 정보에는 그대로 옛날 번호가 남아 있어요.",
+      "expected_department": "회원관리팀",
+      "actual_department": "회원관리팀",
+      "department_correct": true,
+      "expected_inquiry_type": "변경/정정",
+      "actual_inquiry_type": "변경/정정",
+      "inquiry_type_correct": true,
+      "matched_rules": [
+        "기본_변경정정",
+        "기본_우선순위"
+      ],
+      "latency_sec": 9.955,
+      "prompt_tokens": 2351,
+      "completion_tokens": 239,
+      "total_tokens": 2590,
+      "llm_calls": 4,
+      "error": null
+    },
+    {
+      "id": "LEG-01",
+      "text": "약관에 없는 방식으로 요금이 청구돼서 법적조치를 검토하고 있습니다.",
+      "expected_department": "법무팀",
+      "actual_department": "법무팀",
+      "department_correct": true,
+      "expected_inquiry_type": "불만/신고",
+      "actual_inquiry_type": "불만/신고",
+      "inquiry_type_correct": true,
+      "matched_rules": [
+        "법무_분류",
+        "기본_불만신고",
+        "기본_우선순위"
+      ],
+      "latency_sec": 10.319,
+      "prompt_tokens": 2313,
+      "completion_tokens": 274,
+      "total_tokens": 2587,
+      "llm_calls": 4,
+      "error": null
+    },
+    {
+      "id": "LEG-02",
+      "text": "허위 광고로 피해를 입어서 손해배상을 청구하고 싶습니다.",
+      "expected_department": "법무팀",
+      "actual_department": "법무팀",
+      "department_correct": true,
+      "expected_inquiry_type": "불만/신고",
+      "actual_inquiry_type": "불만/신고",
+      "inquiry_type_correct": true,
+      "matched_rules": [
+        "법무_분류",
+        "민감민원",
+        "기본_불만신고",
+        "기본_우선순위"
+      ],
+      "latency_sec": 9.526,
+      "prompt_tokens": 2305,
+      "completion_tokens": 222,
+      "total_tokens": 2527,
+      "llm_calls": 4,
+      "error": null
+    },
+    {
+      "id": "LEG-03",
+      "text": "이 문제로 고소를 고려하고 있으니 담당자의 정확한 답변 부탁드립니다.",
+      "expected_department": "법무팀",
+      "actual_department": "법무팀",
+      "department_correct": true,
+      "expected_inquiry_type": "불만/신고",
+      "actual_inquiry_type": "불만/신고",
+      "inquiry_type_correct": true,
+      "matched_rules": [
+        "법무_분류",
+        "기본_불만신고",
+        "기본_우선순위"
+      ],
+      "latency_sec": 9.255,
+      "prompt_tokens": 2327,
+      "completion_tokens": 195,
+      "total_tokens": 2522,
+      "llm_calls": 4,
+      "error": null
+    },
+    {
+      "id": "LEG-04",
+      "text": "계약 조건과 실제 서비스가 달라서 법적 대응을 준비 중입니다.",
+      "expected_department": "법무팀",
+      "actual_department": "법무팀",
+      "department_correct": true,
+      "expected_inquiry_type": "불만/신고",
+      "actual_inquiry_type": "불만/신고",
+      "inquiry_type_correct": true,
+      "matched_rules": [
+        "법무_분류",
+        "기본_불만신고",
+        "기본_우선순위"
+      ],
+      "latency_sec": 10.146,
+      "prompt_tokens": 2317,
+      "completion_tokens": 221,
+      "total_tokens": 2538,
+      "llm_calls": 4,
+      "error": null
+    },
+    {
+      "id": "LEG-05",
+      "text": "이 건에 대해 소비자보호원에 신고하기 전에 먼저 사실 확인을 요청합니다.",
+      "expected_department": "법무팀",
+      "actual_department": "법무팀",
+      "department_correct": true,
+      "expected_inquiry_type": "불만/신고",
+      "actual_inquiry_type": "불만/신고",
+      "inquiry_type_correct": true,
+      "matched_rules": [
+        "법무_분류",
+        "민감민원",
+        "기본_불만신고",
+        "기본_우선순위"
+      ],
+      "latency_sec": 10.182,
+      "prompt_tokens": 2342,
+      "completion_tokens": 234,
+      "total_tokens": 2576,
+      "llm_calls": 4,
+      "error": null
+    },
+    {
+      "id": "SAF-01",
+      "text": "시설을 이용하다가 사고가 나서 부상을 입었습니다.",
+      "expected_department": "안전관리팀",
+      "actual_department": "안전관리팀",
+      "department_correct": true,
+      "expected_inquiry_type": "불만/신고",
+      "actual_inquiry_type": "불만/신고",
+      "inquiry_type_correct": true,
+      "matched_rules": [
+        "안전_사고_분류",
+        "기본_불만신고",
+        "기본_우선순위"
+      ],
+      "latency_sec": 10.046,
+      "prompt_tokens": 2300,
+      "completion_tokens": 209,
+      "total_tokens": 2509,
+      "llm_calls": 4,
+      "error": null
+    },
+    {
+      "id": "SAF-02",
+      "text": "화재 위험이 있어 보이는 시설을 발견해서 신고합니다.",
+      "expected_department": "안전관리팀",
+      "actual_department": "안전관리팀",
+      "department_correct": true,
+      "expected_inquiry_type": "불만/신고",
+      "actual_inquiry_type": "불만/신고",
+      "inquiry_type_correct": true,
+      "matched_rules": [
+        "안전_사고_분류",
+        "민감민원",
+        "기본_불만신고",
+        "기본_우선순위"
+      ],
+      "latency_sec": 11.467,
+      "prompt_tokens": 2310,
+      "completion_tokens": 215,
+      "total_tokens": 2525,
+      "llm_calls": 4,
+      "error": null
+    },
+    {
+      "id": "SAF-03",
+      "text": "안전수칙이 전혀 지켜지지 않아 위험한 상황을 겪었습니다.",
+      "expected_department": "안전관리팀",
+      "actual_department": "안전관리팀",
+      "department_correct": true,
+      "expected_inquiry_type": "불만/신고",
+      "actual_inquiry_type": "불만/신고",
+      "inquiry_type_correct": true,
+      "matched_rules": [
+        "안전_사고_분류",
+        "기본_불만신고",
+        "기본_우선순위"
+      ],
+      "latency_sec": 11.161,
+      "prompt_tokens": 2335,
+      "completion_tokens": 270,
+      "total_tokens": 2605,
+      "llm_calls": 4,
+      "error": null
+    },
+    {
+      "id": "SAF-04",
+      "text": "이용 중 넘어져서 다쳤는데 안전 점검이 제대로 안 된 것 같습니다.",
+      "expected_department": "안전관리팀",
+      "actual_department": "안전관리팀",
+      "department_correct": true,
+      "expected_inquiry_type": "불만/신고",
+      "actual_inquiry_type": "불만/신고",
+      "inquiry_type_correct": true,
+      "matched_rules": [
+        "안전_사고_분류",
+        "기본_불만신고",
+        "기본_우선순위"
+      ],
+      "latency_sec": 10.637,
+      "prompt_tokens": 2371,
+      "completion_tokens": 281,
+      "total_tokens": 2652,
+      "llm_calls": 4,
+      "error": null
+    },
+    {
+      "id": "SAF-05",
+      "text": "위험물이 그대로 방치되어 있는 걸 봤습니다. 조치 부탁드립니다.",
+      "expected_department": "안전관리팀",
+      "actual_department": "안전관리팀",
+      "department_correct": true,
+      "expected_inquiry_type": "불만/신고",
+      "actual_inquiry_type": "불만/신고",
+      "inquiry_type_correct": true,
+      "matched_rules": [
+        "안전_사고_분류",
+        "기본_불만신고",
+        "기본_우선순위"
+      ],
+      "latency_sec": 10.664,
+      "prompt_tokens": 2360,
+      "completion_tokens": 215,
+      "total_tokens": 2575,
+      "llm_calls": 4,
+      "error": null
+    },
+    {
+      "id": "MKT-01",
+      "text": "이번 이벤트 쿠폰이 적용이 안 되는데 사용 방법을 알고 싶습니다.",
+      "expected_department": "마케팅팀",
+      "actual_department": "마케팅팀",
+      "department_correct": true,
+      "expected_inquiry_type": "안내/조회",
+      "actual_inquiry_type": "안내/조회",
+      "inquiry_type_correct": true,
+      "matched_rules": [
+        "마케팅_프로모션_분류",
+        "기본_안내조회",
+        "기본_우선순위"
+      ],
+      "latency_sec": 9.622,
+      "prompt_tokens": 2363,
+      "completion_tokens": 279,
+      "total_tokens": 2642,
+      "llm_calls": 4,
+      "error": null
+    },
+    {
+      "id": "MKT-02",
+      "text": "프로모션 할인가가 결제 시 반영이 안 됐는데 어떻게 된 건가요?",
+      "expected_department": "마케팅팀",
+      "actual_department": "IT지원팀",
+      "department_correct": false,
+      "expected_inquiry_type": "안내/조회",
+      "actual_inquiry_type": "오류/장애",
+      "inquiry_type_correct": false,
+      "matched_rules": [
+        "기본_오류장애",
+        "기본_우선순위"
+      ],
+      "latency_sec": 9.611,
+      "prompt_tokens": 2335,
+      "completion_tokens": 214,
+      "total_tokens": 2549,
+      "llm_calls": 4,
+      "error": null
+    },
+    {
+      "id": "MKT-03",
+      "text": "쿠폰 유효기간이 언제까지인지 궁금합니다.",
+      "expected_department": "마케팅팀",
+      "actual_department": "마케팅팀",
+      "department_correct": true,
+      "expected_inquiry_type": "안내/조회",
+      "actual_inquiry_type": "안내/조회",
+      "inquiry_type_correct": true,
+      "matched_rules": [
+        "마케팅_프로모션_분류",
+        "기본_안내조회",
+        "기본_우선순위"
+      ],
+      "latency_sec": 10.561,
+      "prompt_tokens": 2289,
+      "completion_tokens": 185,
+      "total_tokens": 2474,
+      "llm_calls": 4,
+      "error": null
+    },
+    {
+      "id": "MKT-04",
+      "text": "이벤트 응모는 했는데 당첨 여부를 어디서 확인하나요?",
+      "expected_department": "마케팅팀",
+      "actual_department": "마케팅팀",
+      "department_correct": true,
+      "expected_inquiry_type": "안내/조회",
+      "actual_inquiry_type": "안내/조회",
+      "inquiry_type_correct": true,
+      "matched_rules": [
+        "마케팅_프로모션_분류",
+        "기본_안내조회",
+        "기본_우선순위"
+      ],
+      "latency_sec": 10.684,
+      "prompt_tokens": 2293,
+      "completion_tokens": 198,
+      "total_tokens": 2491,
+      "llm_calls": 4,
+      "error": null
+    },
+    {
+      "id": "MKT-05",
+      "text": "광고에서 본 할인 프로모션이 지금도 진행 중인지 확인하고 싶습니다.",
+      "expected_department": "마케팅팀",
+      "actual_department": "마케팅팀",
+      "department_correct": true,
+      "expected_inquiry_type": "안내/조회",
+      "actual_inquiry_type": "안내/조회",
+      "inquiry_type_correct": true,
+      "matched_rules": [
+        "마케팅_프로모션_분류",
+        "기본_안내조회",
+        "기본_우선순위"
+      ],
+      "latency_sec": 10.198,
+      "prompt_tokens": 2318,
+      "completion_tokens": 242,
+      "total_tokens": 2560,
+      "llm_calls": 4,
+      "error": null
+    },
+    {
+      "id": "CS-01",
+      "text": "여러 번 문의했는데 답변이 없어서 다시 남깁니다. 너무 불편합니다.",
+      "expected_department": "고객지원총괄팀",
+      "actual_department": "고객지원총괄팀",
+      "department_correct": true,
+      "expected_inquiry_type": "불만/신고",
+      "actual_inquiry_type": "불만/신고",
+      "inquiry_type_correct": true,
+      "matched_rules": [
+        "기본_불만신고",
+        "반복문의_가중",
+        "기본_우선순위"
+      ],
+      "latency_sec": 11.136,
+      "prompt_tokens": 2335,
+      "completion_tokens": 229,
+      "total_tokens": 2564,
+      "llm_calls": 4,
+      "error": null
+    },
+    {
+      "id": "CS-02",
+      "text": "상담원 응대가 너무 불친절해서 항의하고 싶습니다.",
+      "expected_department": "고객지원총괄팀",
+      "actual_department": "고객지원총괄팀",
+      "department_correct": true,
+      "expected_inquiry_type": "불만/신고",
+      "actual_inquiry_type": "불만/신고",
+      "inquiry_type_correct": true,
+      "matched_rules": [
+        "민감민원",
+        "기본_불만신고",
+        "기본_우선순위"
+      ],
+      "latency_sec": 8.947,
+      "prompt_tokens": 2346,
+      "completion_tokens": 201,
+      "total_tokens": 2547,
+      "llm_calls": 4,
+      "error": null
+    },
+    {
+      "id": "CS-03",
+      "text": "같은 문제로 세 번째 문의드리는데 계속 해결이 안 됩니다.",
+      "expected_department": "고객지원총괄팀",
+      "actual_department": "고객지원총괄팀",
+      "department_correct": true,
+      "expected_inquiry_type": "불만/신고",
+      "actual_inquiry_type": "불만/신고",
+      "inquiry_type_correct": true,
+      "matched_rules": [
+        "기본_불만신고",
+        "기본_우선순위"
+      ],
+      "latency_sec": 10.854,
+      "prompt_tokens": 2355,
+      "completion_tokens": 254,
+      "total_tokens": 2609,
+      "llm_calls": 4,
+      "error": null
+    },
+    {
+      "id": "CS-04",
+      "text": "전반적인 서비스 품질에 실망해서 불만을 제기합니다.",
+      "expected_department": "고객지원총괄팀",
+      "actual_department": "고객지원총괄팀",
+      "department_correct": true,
+      "expected_inquiry_type": "불만/신고",
+      "actual_inquiry_type": "불만/신고",
+      "inquiry_type_correct": true,
+      "matched_rules": [
+        "민감민원",
+        "기본_불만신고",
+        "기본_우선순위"
+      ],
+      "latency_sec": 10.449,
+      "prompt_tokens": 2341,
+      "completion_tokens": 218,
+      "total_tokens": 2559,
+      "llm_calls": 4,
+      "error": null
+    },
+    {
+      "id": "CS-05",
+      "text": "이전에 문의드린 건에 대한 후속 조치가 전혀 없었습니다.",
+      "expected_department": "고객지원총괄팀",
+      "actual_department": "고객지원총괄팀",
+      "department_correct": true,
+      "expected_inquiry_type": "불만/신고",
+      "actual_inquiry_type": "불만/신고",
+      "inquiry_type_correct": true,
+      "matched_rules": [
+        "기본_불만신고",
+        "기본_우선순위"
+      ],
+      "latency_sec": 11.397,
+      "prompt_tokens": 2358,
+      "completion_tokens": 264,
+      "total_tokens": 2622,
+      "llm_calls": 4,
+      "error": null
+    },
+    {
+      "id": "GEN-01",
+      "text": "이용 방법을 잘 몰라서 안내 부탁드립니다.",
+      "expected_department": "고객센터",
+      "actual_department": "고객센터",
+      "department_correct": true,
+      "expected_inquiry_type": "안내/조회",
+      "actual_inquiry_type": "안내/조회",
+      "inquiry_type_correct": true,
+      "matched_rules": [
+        "기본_안내조회",
+        "기본_우선순위"
+      ],
+      "latency_sec": 9.515,
+      "prompt_tokens": 2316,
+      "completion_tokens": 227,
+      "total_tokens": 2543,
+      "llm_calls": 4,
+      "error": null
+    },
+    {
+      "id": "GEN-02",
+      "text": "결제 수단에는 어떤 것들이 있는지 궁금합니다.",
+      "expected_department": "고객센터",
+      "actual_department": "고객센터",
+      "department_correct": true,
+      "expected_inquiry_type": "안내/조회",
+      "actual_inquiry_type": "안내/조회",
+      "inquiry_type_correct": true,
+      "matched_rules": [
+        "기본_안내조회",
+        "기본_우선순위"
+      ],
+      "latency_sec": 9.243,
+      "prompt_tokens": 2623,
+      "completion_tokens": 402,
+      "total_tokens": 3025,
+      "llm_calls": 4,
+      "error": null
+    },
+    {
+      "id": "GEN-03",
+      "text": "이용약관 내용을 조금 더 자세히 알고 싶습니다.",
+      "expected_department": "고객센터",
+      "actual_department": "고객센터",
+      "department_correct": true,
+      "expected_inquiry_type": "안내/조회",
+      "actual_inquiry_type": "안내/조회",
+      "inquiry_type_correct": true,
+      "matched_rules": [
+        "기본_안내조회",
+        "기본_우선순위"
+      ],
+      "latency_sec": 7.609,
+      "prompt_tokens": 2299,
+      "completion_tokens": 201,
+      "total_tokens": 2500,
+      "llm_calls": 4,
+      "error": null
+    },
+    {
+      "id": "GEN-04",
+      "text": "적립금 사용 방법이 궁금해서 문의드립니다.",
+      "expected_department": "고객센터",
+      "actual_department": "고객센터",
+      "department_correct": true,
+      "expected_inquiry_type": "안내/조회",
+      "actual_inquiry_type": "안내/조회",
+      "inquiry_type_correct": true,
+      "matched_rules": [
+        "기본_안내조회",
+        "기본_우선순위"
+      ],
+      "latency_sec": 9.843,
+      "prompt_tokens": 2314,
+      "completion_tokens": 231,
+      "total_tokens": 2545,
+      "llm_calls": 4,
+      "error": null
+    },
+    {
+      "id": "GEN-05",
+      "text": "고객센터 운영시간이 어떻게 되는지 알려주세요.",
+      "expected_department": "고객센터",
+      "actual_department": "고객센터",
+      "department_correct": true,
+      "expected_inquiry_type": "안내/조회",
+      "actual_inquiry_type": "안내/조회",
+      "inquiry_type_correct": true,
+      "matched_rules": [
+        "기본_안내조회",
+        "기본_우선순위"
+      ],
+      "latency_sec": 9.207,
+      "prompt_tokens": 2287,
+      "completion_tokens": 181,
+      "total_tokens": 2468,
+      "llm_calls": 4,
+      "error": null
+    }
+  ]
+}

@@ -107,4 +107,5 @@ export const ICONS_BY_VIEW = {
   draft: DraftIcon,
   review: ReviewIcon,
   kb: KbIcon,
+  test: IntakeIcon,
 }

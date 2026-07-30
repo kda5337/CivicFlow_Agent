@@ -15,7 +15,6 @@ from langfuse import Langfuse, get_client
 from langfuse.langchain import CallbackHandler
 from langfuse.types import MaskOtelSpansParams, MaskOtelSpansResult, OtelSpanPatch
 
-
 # 한글은 Python 정규식에서 \w(단어 문자)로 취급되어, 공백 없이 한글이 바로 붙는
 # "010-1234-5678로 연락주세요" 같은 실제 민원 문장에서 \b 경계가 깨져 마스킹이
 # 누락된다. 그래서 \b 대신 ASCII 문자 클래스와 숫자 lookaround로 경계를 판단한다.

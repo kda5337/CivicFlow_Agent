@@ -115,7 +115,7 @@ def _run_pipeline_without_cache(inquiry_id: str, raw_text: str) -> dict:
     from app.graph.nodes.classify import classify_node
     from app.graph.nodes.generate import generate_node
     from app.graph.nodes.intake import intake_node
-    from app.graph.nodes.intake_reply import greet_node, reject_node
+    from app.graph.nodes.intake_reply import reject_node
     from app.graph.nodes.retrieve import retrieve_node
     from app.graph.nodes.rules import rules_node
 
@@ -125,7 +125,6 @@ def _run_pipeline_without_cache(inquiry_id: str, raw_text: str) -> dict:
         state.update(reject_node(state))
         return state
 
-    state.update(greet_node(state))
     state.update(classify_node(state))
     state.update(rules_node(state))
     state.update(retrieve_node(state))

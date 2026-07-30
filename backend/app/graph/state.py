@@ -20,8 +20,12 @@ class InquiryState(TypedDict, total=False):
     skip_relevance_check: bool
     cache_hit: bool  # query_cache에서 유사한 과거 문의를 찾아 재사용했는지 여부
 
+    # 관리자용 테스트 섹션에서 실행된 요청이면 True. check_cache_node/store_cache_node가
+    # 이 값을 보고 캐시 조회·저장을 생략한다(테스트 데이터가 실제 캐시를 오염시키지 않게).
+    is_test: bool
+
     relevance_check: dict  # RelevanceCheckResult.model_dump()
-    intake_reply: str  # 발랄한 페르소나로 생성한 재질문 요청/환영+요약 답변
+    intake_reply: str  # (관련없음 판정 시) 발랄한 페르소나로 생성한 재질문 요청 답변
 
     classification: dict  # ClassificationResult.model_dump()
     rule_flags: dict  # {"matched_rules": [...], "candidate_departments": [...], "requires_manager_review": bool, "review_reasons": [...]}

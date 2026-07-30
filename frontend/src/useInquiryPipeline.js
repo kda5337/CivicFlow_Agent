@@ -31,6 +31,19 @@ export function useInquiryPipeline(initialView = 'dashboard') {
   // 답변 초안 화면에서 담당자가 편집을 마친 텍스트. "검토하기"를 누르는 순간의
   // 스냅샷이라, 검토 화면에서 뒤로 갔다 다시 돌아와도 그 시점 내용이 유지된다.
   const [reviewText, setReviewText] = useState('')
+  // 지금 result가 테스트 섹션에서 실행된 것인지. "AI 재생성 요청"(handleRegenerate)이
+  // 이 값을 그대로 재사용해야, 테스트 문의를 재생성할 때도 캐시 조회/저장을 계속
+  // 건너뛴다 — 안 그러면 재생성 시점에 진짜 캐시를 오염시키게 된다.
+  const [isTestRun, setIsTestRun] = useState(false)
+  // "AI 처리 →"를 눌렀을 때 answer_cache 히트가 있으면 여기 { text, submissionId,
+  // finalAnswer, sources }가 채워진다. null이 아니면 화면에 "캐시 답변을 쓸지" 확인
+  // 팝업을 띄운다 — 담당자가 선택하면 그 결과를 들고 runInquiry를 이어서 부른다.
+  const [pendingCacheDecision, setPendingCacheDecision] = useState(null)
+  // RAG 검색 결과 화면에서 근거가 부족하다고 판단해 "빈 화면에서 직접 작성"을 눌렀는지.
+  // true면 답변 초안 화면의 draft_answer가 AI 생성이 아니라 담당자가 처음부터 쓴 것임을
+  // 수정 이력에 다르게 표시한다. 새로 문의를 처리하거나(runInquiry) 문서로 재생성하면
+  // (handleGenerateFromDocs) 다시 AI 생성 기반으로 돌아오므로 false로 초기화한다.
+  const [isBlankDraft, setIsBlankDraft] = useState(false)
 
   const syncClassificationToSubmission = async (submissionId, classification, ruleFlags) => {
     try {
@@ -55,7 +68,12 @@ export function useInquiryPipeline(initialView = 'dashboard') {
     }
   }
 
-  const runInquiry = async (text, submissionId = null) => {
+  // isTest: 관리자용 "테스트" 섹션에서 호출하면 true. submissionId 없이 항상 새로
+  // 실행되며(citizen_submissions에 원래도 안 남음), 백엔드가 이 값을 보고 의미 캐시
+  // 조회/저장도 건너뛴다(query_cache 오염 방지).
+  // useAnswerCache: handleProcessClick이 캐시 히트를 미리 확인해 담당자에게 물어본 뒤
+  // 그 선택(true/false)을 넘길 때 쓴다. undefined면 백엔드가 알아서 조회해 있으면 쓴다.
+  const runInquiry = async (text, submissionId = null, { isTest = false, useAnswerCache } = {}) => {
     setLoading(true)
     setProcessingSubmissionId(submissionId)
     setError(null)
@@ -68,7 +86,13 @@ export function useInquiryPipeline(initialView = 'dashboard') {
         // 담당부서/우선순위/감정상태 분류)가 이미 한 번 검증을 마친 문의다. 백엔드가
         // submission_id를 받으면 이 둘을 다시 돌리지 않고 그 결과를 그대로 가져와
         // RAG 검색+답변 생성만 수행한다.
-        body: JSON.stringify({ text, submission_id: submissionId, skip_relevance_check: Boolean(submissionId) }),
+        body: JSON.stringify({
+          text,
+          submission_id: submissionId,
+          skip_relevance_check: Boolean(submissionId),
+          is_test: isTest,
+          use_answer_cache: useAnswerCache,
+        }),
       })
       if (!response.ok) {
         throw new Error(`${response.status} ${response.statusText}`)
@@ -77,15 +101,17 @@ export function useInquiryPipeline(initialView = 'dashboard') {
       setSubmittedText(text)
       setResult(json)
       setLinkedSubmissionId(submissionId)
+      setIsTestRun(isTest)
       setOriginalDepartment(json.classification?.담당부서 ?? null)
       setDepartmentOverridden(false)
-      // 자동 생성된 답변은 검색된 문서 중 유사도 1위 하나만 근거로 쓴다(백엔드
-      // generate_node와 동일한 기본값) — 담당자가 RAG 화면에서 문서를 직접 골라
-      // 다시 생성하기 전까지는 이 값으로 표시한다.
-      setAnswerSourceDocs((json.retrieved_docs || []).slice(0, 1))
+      // 캐시 히트로 채워진 답변은 캐시에 있던 출처 전부가 그 답변의 근거였으므로 전부
+      // "현재 답변 근거"로 표시하고, 새로 생성된 답변은 기존과 동일하게 유사도 1위 문서
+      // 하나만 근거로 쓴다(백엔드 generate_node와 동일한 기본값).
+      setAnswerSourceDocs(json.cache_hit ? json.retrieved_docs || [] : (json.retrieved_docs || []).slice(0, 1))
       setAnswerSources(json.sources || [])
       setDocRegenerateError(null)
       setReviewText('')
+      setIsBlankDraft(false)
       setActiveView('analysis')
 
       if (submissionId && json.classification) {
@@ -100,7 +126,59 @@ export function useInquiryPipeline(initialView = 'dashboard') {
   }
 
   const handleRegenerate = () => {
-    if (submittedText) runInquiry(submittedText, linkedSubmissionId)
+    if (submittedText) runInquiry(submittedText, linkedSubmissionId, { isTest: isTestRun })
+  }
+
+  // 문의 접수함의 "AI 처리 →" 버튼이 실제로 부르는 함수. submissionId가 있는 건(=실제
+  // 시민 접수 건)만 answer_cache를 먼저 확인한다 — 테스트 섹션처럼 submissionId 없이
+  // 직접 부르는 경우는 캐시 확인 대상이 아니라 바로 runInquiry로 진행한다. 캐시가
+  // 있으면 화면에 확인 팝업을 띄우기 위해 pendingCacheDecision을 채우고, 담당자의
+  // 선택은 resolveCacheDecision이 이어받는다.
+  const handleProcessClick = async (text, submissionId = null, options) => {
+    if (!submissionId) {
+      runInquiry(text, submissionId, options)
+      return
+    }
+    try {
+      const response = await fetch(`${API_URL}/answer-cache-check`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ submission_id: submissionId }),
+      })
+      if (response.ok) {
+        const check = await response.json()
+        if (check.cache_hit) {
+          setPendingCacheDecision({
+            text,
+            submissionId,
+            finalAnswer: check.final_answer,
+            sources: check.sources,
+          })
+          return
+        }
+      }
+      // 확인 요청 자체가 실패해도(네트워크 오류 등) 처리를 막지는 않는다 — 캐시 확인
+      // 없이 기존처럼 새로 생성하는 쪽으로 진행한다.
+    } catch {
+      // 위와 동일한 이유로 무시하고 진행한다.
+    }
+    runInquiry(text, submissionId, options)
+  }
+
+  // 캐시 확인 팝업에서 담당자가 버튼을 눌렀을 때 호출된다. useCache=true면 그 캐시
+  // 답변을 그대로 쓰고, false면 "새로 생성"으로 기존 파이프라인을 그대로 돈다.
+  const resolveCacheDecision = (useCache) => {
+    const decision = pendingCacheDecision
+    setPendingCacheDecision(null)
+    if (!decision) return
+    runInquiry(decision.text, decision.submissionId, { useAnswerCache: useCache })
+  }
+
+  // 팝업의 x(닫기)를 눌렀을 때 호출된다. 캐시 사용/새로 생성 중 아무것도 선택하지 않고
+  // "AI 처리" 시도 자체를 취소한다 — runInquiry를 부르지 않으므로 문의 접수함에 그대로
+  // 남아있고, processingSubmissionId도 채워진 적이 없어 버튼 잠금도 없다.
+  const dismissCacheDecision = () => {
+    setPendingCacheDecision(null)
   }
 
   const goToNext = () => {
@@ -136,15 +214,16 @@ export function useInquiryPipeline(initialView = 'dashboard') {
   }
 
   // 검토 화면에서 "검토 완료 & 등록"을 눌렀을 때 호출된다. 이 문의가 사용자용 접수
-  // 건에서 온 것이면(linkedSubmissionId) 그 원본 레코드에 확정 답변을 실제로
-  // 저장한다 — 사용자 페이지의 '답변 확인' 탭이 바로 이 값을 보여준다. 실패하면
-  // 예외를 던져 검토 화면이 "등록 실패"를 보여줄 수 있게 한다.
+  // 건에서 온 것이면(linkedSubmissionId) 그 원본 레코드에 확정 답변과 그 출처를 실제로
+  // 저장한다 — 사용자 페이지의 '답변 확인' 탭이 바로 이 값을 보여주고, 백엔드는 이걸
+  // answer_cache에도 등록해 비슷한 문의가 다시 오면 재사용한다. 실패하면 예외를 던져
+  // 검토 화면이 "등록 실패"를 보여줄 수 있게 한다.
   const handleFinalizeAnswer = async (finalText) => {
     if (!linkedSubmissionId) return
     const response = await fetch(`${SUBMISSIONS_URL}/${linkedSubmissionId}/answer`, {
       method: 'PATCH',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ final_answer: finalText }),
+      body: JSON.stringify({ final_answer: finalText, sources: answerSources }),
     })
     if (!response.ok) {
       throw new Error(`${response.status} ${response.statusText}`)
@@ -175,12 +254,24 @@ export function useInquiryPipeline(initialView = 'dashboard') {
       setResult((prev) => (prev ? { ...prev, draft_answer: json.draft_answer } : prev))
       setAnswerSourceDocs(docs)
       setAnswerSources(json.sources || [])
+      setIsBlankDraft(false)
       setActiveView('draft')
     } catch (err) {
       setDocRegenerateError(err.message)
     } finally {
       setDocRegenerating(false)
     }
+  }
+
+  // RAG 검색 결과 화면에서 근거 문서가 부족/없다고 판단했을 때 쓴다. AI가 만든(또는
+  // 캐시로 채워진) 초안을 버리고, 담당자가 완전히 빈 화면에서 답변을 직접 쓰도록
+  // 답변 초안 화면으로 바로 넘어간다.
+  const handleStartBlankDraft = () => {
+    setResult((prev) => (prev ? { ...prev, draft_answer: '' } : prev))
+    setAnswerSourceDocs([])
+    setAnswerSources([])
+    setIsBlankDraft(true)
+    setActiveView('draft')
   }
 
   return {
@@ -198,7 +289,13 @@ export function useInquiryPipeline(initialView = 'dashboard') {
     docRegenerateError,
     linkedSubmissionId,
     reviewText,
+    isTestRun,
+    pendingCacheDecision,
+    isBlankDraft,
     runInquiry,
+    handleProcessClick,
+    resolveCacheDecision,
+    dismissCacheDecision,
     handleRegenerate,
     goToNext,
     goToPrev,
@@ -206,5 +303,6 @@ export function useInquiryPipeline(initialView = 'dashboard') {
     handleProceedToReview,
     handleFinalizeAnswer,
     handleGenerateFromDocs,
+    handleStartBlankDraft,
   }
 }

@@ -20,4 +20,5 @@ pytesseract>=0.3.10
 psycopg2-binary>=2.9
 tqdm>=4.66
 requests>=2.31
+matplotlib>=3.9
 streamlit>=1.60
