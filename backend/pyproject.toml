@@ -1,0 +1,20 @@
+[tool.ruff]
+line-length = 110
+target-version = "py311"
+
+[tool.ruff.lint]
+select = ["E", "F", "I"]
+# E501(줄 길이)은 한글 텍스트가 많아 실효성이 낮고, E402(파일 상단 import 규칙)는
+# ingest_*.py/스크립트들이 "dotenv 로드 -> sys.path 등록 -> 로컬 모듈 import" 순서를
+# 의도적으로 지키기 위해 쓰는 패턴이라(각 파일 주석 참고) 예외로 둔다.
+ignore = ["E501", "E402"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+
+[tool.mypy]
+python_version = "3.11"
+# langgraph/langchain/chromadb 등 대부분 타입 스텁이 없어, 끄지 않으면 진짜 버그가
+# "스텁 없음" 노이즈에 묻힌다. CI에서는 논블로킹으로 돌린다(54건 미해결 — 대부분
+# InquiryState(TypedDict) vs dict 불일치 같은 LangGraph 특유의 타이핑 마찰).
+ignore_missing_imports = true

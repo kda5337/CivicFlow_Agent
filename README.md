@@ -8,15 +8,14 @@ LangGraph `StateGraph`로 4절 시스템 흐름을 노드 단위로 구현했다
 
 ```
 START -> intake --+-> reject -> END                      (관련없는 입력)
-                   +-> greet -> classify -> apply_rules --+-> retrieve -> generate -> END
-                                                           +-> manager_review -> END   (민감 민원 감지 시)
+                   +-> classify -> apply_rules --+-> retrieve -> generate -> END
+                                                  +-> manager_review -> END   (민감 민원 감지 시)
 ```
 
 | 노드 | 파일 | 역할 |
 |---|---|---|
 | intake | `backend/app/graph/nodes/intake.py` | 문의접수, 입력 검증, 학사행정 민원·문의 관련성 판별 |
 | reject | `backend/app/graph/nodes/intake_reply.py` | (관련없음) 발랄한 페르소나로 재질문 요청 답변 생성 후 종료 |
-| greet | `backend/app/graph/nodes/intake_reply.py` | (정상) 발랄한 페르소나로 환영+질문 요약 답변 생성 |
 | classify | `backend/app/graph/nodes/classify.py` | LLM 유형/우선순위/담당부서 분류 (7절, 업스테이지 Solar) |
 | apply_rules | `backend/app/graph/nodes/rules.py` | 키워드 Rule로 분류 보정 (9절, `backend/rules.yaml`) |
 | retrieve | `backend/app/graph/nodes/retrieve.py` | RAG 근거 문서 검색 (8절) |

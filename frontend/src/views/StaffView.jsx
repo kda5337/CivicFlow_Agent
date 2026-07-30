@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react'
 import Sidebar from '../components/Sidebar.jsx'
 import Topbar from '../components/Topbar.jsx'
 import Pipeline from '../components/Pipeline.jsx'
+import AnswerCacheDialog from '../components/AnswerCacheDialog.jsx'
 import DashboardView from './DashboardView.jsx'
 import SubmissionsListView from './SubmissionsListView.jsx'
 import AnsweredView from './AnsweredView.jsx'
@@ -24,7 +25,7 @@ const STAFF_DEPARTMENT_KEY = 'civicflow_staff_department'
 // 각각 STAFF_VIEWS에서 kb를 빼고, DraftView에 hideTraceLink를 넘겨서 뺀다.
 // 담당부서 재배정(AnalysisView)은 관리자용과 동일하게 그대로 둔다 — AI가 잘못
 // 분류한 문의를 다른 부서로 넘기는 것도 그 부서 업무 처리의 일부이기 때문이다.
-const STAFF_VIEWS = VIEWS.filter((view) => view.key !== 'kb')
+const STAFF_VIEWS = VIEWS.filter((view) => view.key !== 'kb' && view.key !== 'test')
 
 function DepartmentGate({ onConfirm }) {
   const [departments, setDepartments] = useState([])
@@ -89,7 +90,11 @@ export default function StaffView() {
     docRegenerateError,
     linkedSubmissionId,
     reviewText,
-    runInquiry,
+    pendingCacheDecision,
+    isBlankDraft,
+    handleProcessClick,
+    resolveCacheDecision,
+    dismissCacheDecision,
     handleRegenerate,
     goToNext,
     goToPrev,
@@ -97,6 +102,7 @@ export default function StaffView() {
     handleProceedToReview,
     handleFinalizeAnswer,
     handleGenerateFromDocs,
+    handleStartBlankDraft,
   } = useInquiryPipeline('submissions')
 
   const handleConfirmDepartment = (dept) => {
@@ -125,6 +131,11 @@ export default function StaffView() {
 
   return (
     <div className="app">
+      <AnswerCacheDialog
+        pending={pendingCacheDecision}
+        onResolve={resolveCacheDecision}
+        onClose={dismissCacheDecision}
+      />
       <Sidebar
         activeView={activeView}
         onNavigate={setActiveView}
@@ -144,7 +155,7 @@ export default function StaffView() {
           {activeView === 'dashboard' && <DashboardView lockDepartment={department} />}
           {activeView === 'submissions' && (
             <SubmissionsListView
-              onProcess={runInquiry}
+              onProcess={handleProcessClick}
               loading={loading}
               processingSubmissionId={processingSubmissionId}
               processError={error}
@@ -156,6 +167,7 @@ export default function StaffView() {
             <AnalysisView
               result={result}
               onNext={goToNext}
+              onBackToSubmissions={() => setActiveView('submissions')}
               onDepartmentChange={handleDepartmentChange}
               originalDepartment={originalDepartment}
               departmentOverridden={departmentOverridden}
@@ -171,6 +183,7 @@ export default function StaffView() {
               generating={docRegenerating}
               generateError={docRegenerateError}
               currentSourceDocs={answerSourceDocs}
+              onStartBlankDraft={handleStartBlankDraft}
             />
           )}
           {activeView === 'draft' && (
@@ -183,6 +196,7 @@ export default function StaffView() {
               sources={answerSources}
               onProceedToReview={handleProceedToReview}
               hideTraceLink
+              isBlankDraft={isBlankDraft}
             />
           )}
           {activeView === 'review' && (

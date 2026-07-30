@@ -13,6 +13,7 @@ export default function DraftView({
   sources,
   onProceedToReview,
   hideTraceLink,
+  isBlankDraft,
 }) {
   const [draftText, setDraftText] = useState('')
 
@@ -63,11 +64,17 @@ export default function DraftView({
 
       <div className="editor-wrap">
         <div className="card">
-          <h2 className="section-title">AI 답변 초안</h2>
+          <h2 className="section-title">{isBlankDraft ? '답변 직접 작성' : 'AI 답변 초안'}</h2>
+          {isBlankDraft && (
+            <p style={{ fontSize: 12.5, color: 'var(--text-dim)', marginTop: -8, marginBottom: 12 }}>
+              근거 문서가 부족해 AI 초안 없이 빈 화면에서 시작합니다. 처음부터 직접 작성해 주세요.
+            </p>
+          )}
           <textarea
             style={{ minHeight: 220 }}
             value={draftText}
             onChange={(event) => setDraftText(event.target.value)}
+            placeholder={isBlankDraft ? '답변을 여기에 작성하세요...' : undefined}
           />
           {sources && sources.length > 0 && (
             <div className="sources-readonly">
@@ -93,14 +100,22 @@ export default function DraftView({
         </div>
         <div className="card">
           <h2 className="section-title">수정 이력</h2>
-          <div className="rev-item">
-            <div className="rev-time">{result.status}</div>
-            <div className="rev-actor">AI 초안 생성</div>
-            <div style={{ color: 'var(--text-dim)' }}>
-              근거 문서 {sourceDocs.length}건 기반 생성
-              {sources && sources.length > 0 && <> ({sources.join(', ')})</>}
+          {isBlankDraft ? (
+            <div className="rev-item">
+              <div className="rev-time">{result.status}</div>
+              <div className="rev-actor">담당자 직접 작성 시작</div>
+              <div style={{ color: 'var(--text-dim)' }}>근거 문서 부족으로 AI 초안 없이 시작함</div>
             </div>
-          </div>
+          ) : (
+            <div className="rev-item">
+              <div className="rev-time">{result.status}</div>
+              <div className="rev-actor">AI 초안 생성</div>
+              <div style={{ color: 'var(--text-dim)' }}>
+                근거 문서 {sourceDocs.length}건 기반 생성
+                {sources && sources.length > 0 && <> ({sources.join(', ')})</>}
+              </div>
+            </div>
+          )}
           {edited && (
             <div className="rev-item">
               <div className="rev-time">방금</div>

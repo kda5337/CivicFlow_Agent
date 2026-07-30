@@ -38,6 +38,7 @@ export default function RagView({
   generating,
   generateError,
   currentSourceDocs,
+  onStartBlankDraft,
 }) {
   const docs = result?.retrieved_docs || []
   const [selected, setSelected] = useState(() => initialSelection(docs, currentSourceDocs))
@@ -67,6 +68,15 @@ export default function RagView({
   const selectedDocs = docs.filter((_, index) => selected.has(index))
   const hasStrongMatch = docs.some((doc) => doc.score >= SIMILARITY_WARNING_THRESHOLD)
 
+  // 문서를 2개 이상 골라두고 "선택한 문서로 답변 생성"을 누르지 않은 채 다음 단계로
+  // 넘어가면, 답변 초안은 여전히 이전 근거(보통 1개)로 만든 것이라 화면의 체크 상태와
+  // 실제 답변 내용이 어긋난다. 지금 고른 문서 조합이 실제로 답변에 반영된 것과 같을
+  // 때만(=재생성을 거쳤을 때만) "다음 단계"를 허용한다.
+  const selectedSources = new Set(selectedDocs.map((doc) => doc.source))
+  const selectionMatchesDraft =
+    selectedSources.size === usedSources.size && [...selectedSources].every((s) => usedSources.has(s))
+  const blockNext = selected.size >= 2 && !selectionMatchesDraft
+
   return (
     <div className="view" id="view-rag">
       <h2 className="section-title">관련 근거 문서 (관련도 순)</h2>
@@ -76,14 +86,28 @@ export default function RagView({
       </p>
 
       {docs.length > 0 && !hasStrongMatch && (
-        <div className="warning-banner">
-          ⚠ 유사도 {Math.round(SIMILARITY_WARNING_THRESHOLD * 100)}% 이상 비슷한 문서를 찾지 못했습니다. 근거가 약할 수
-          있으니 답변 내용을 담당자가 각별히 주의해서 확인해 주세요.
+        <div className="warning-banner" style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 12, flexWrap: 'wrap' }}>
+          <span>
+            ⚠ 유사도 {Math.round(SIMILARITY_WARNING_THRESHOLD * 100)}% 이상 비슷한 문서를 찾지 못했습니다. 근거가 약할 수
+            있으니 답변 내용을 담당자가 각별히 주의해서 확인해 주세요.
+          </span>
+          {onStartBlankDraft && (
+            <button className="btn btn-ghost" type="button" onClick={onStartBlankDraft}>
+              근거 없이 빈 화면에서 직접 작성 →
+            </button>
+          )}
         </div>
       )}
 
       {docs.length === 0 && (
-        <div className="card empty-state">이 문의와 관련해 검색된 근거 문서가 없습니다.</div>
+        <div className="card empty-state" style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 12 }}>
+          이 문의와 관련해 검색된 근거 문서가 없습니다.
+          {onStartBlankDraft && (
+            <button className="btn btn-ghost" type="button" onClick={onStartBlankDraft}>
+              근거 없이 빈 화면에서 직접 작성 →
+            </button>
+          )}
+        </div>
       )}
 
       {docs.map((doc, index) => {
@@ -136,11 +160,18 @@ export default function RagView({
         </div>
       )}
 
+      {blockNext && (
+        <div className="warning-banner">
+          ⚠ 문서를 2개 이상 선택했습니다. "선택한 문서로 답변 생성"을 먼저 눌러 답변에
+          반영한 뒤에 다음 단계로 진행해 주세요.
+        </div>
+      )}
+
       <div className="form-actions">
         <button className="btn btn-ghost" type="button" onClick={onPrev}>
           ← 이전 단계: AI 분석 결과
         </button>
-        <button className="btn btn-primary" type="button" onClick={onNext}>
+        <button className="btn btn-primary" type="button" onClick={onNext} disabled={blockNext}>
           다음 단계: 답변 초안 편집 →
         </button>
       </div>

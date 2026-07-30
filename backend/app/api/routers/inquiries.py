@@ -11,11 +11,14 @@ from app.graph.build import get_compiled_graph
 from app.graph.nodes.generate import build_draft_answer, generate_node
 from app.graph.nodes.retrieve import retrieve_node
 from app.models.schemas import (
+    AnswerCacheCheckRequest,
+    AnswerCacheCheckResponse,
     InquiryRequest,
     InquiryResponse,
     RegenerateAnswerRequest,
     RegenerateAnswerResponse,
 )
+from app.rag.answer_cache import lookup_answer_cache_entry
 
 router = APIRouter(prefix="/inquiries", tags=["inquiries"])
 
@@ -34,7 +37,7 @@ def _fetch_submission(submission_id: str) -> dict:
     return _row_to_submission(row)
 
 
-def _process_from_submission(inquiry_id: str, submission_id: str) -> dict:
+def _process_from_submission(inquiry_id: str, submission_id: str, use_answer_cache: bool | None = None) -> dict:
     """문의 접수함에서 'AI 처리'로 넘어온 건을 처리한다.
 
     intake(관련성 판별)와 classify_node+rules_node(문의유형/담당부서/우선순위/감정상태/
@@ -43,6 +46,15 @@ def _process_from_submission(inquiry_id: str, submission_id: str) -> dict:
     판단시키는 대신 그 값을 그대로 가져와 담당자에게 "확인차" 보여주고, 아직 하지 않은
     RAG 근거 검색 + 답변 초안 생성만 수행한다. core_request/classification_reason/
     matched_rules가 없는(이 기능 도입 이전에 접수된) 오래된 건은 안내문/빈 배열로 대신한다.
+
+    use_answer_cache=False면(담당자가 확인 팝업에서 "새로 생성"을 선택) answer_cache를
+    아예 조회하지 않고 retrieve_node+generate_node를 그대로 돈다. 그 외(True 또는 팝업 없이
+    호출된 기본값 None)에는 answer_cache를 조회해서, 유사도 0.90 이상인 과거 문의 중
+    담당자가 이미 검토·확정한 답변이 있으면 retrieve_node/generate_node를 아예 건너뛰고
+    그 답변과 출처를 그대로 쓴다 — RAG 화면도 새로 검색하는 대신 그 캐시 답변이 근거로
+    삼았던 출처 목록을 그대로 보여준다(실제 문서 내용은 따로 안 남아 있어 안내 문구로
+    대신한다). 이렇게 가져온 값도 여전히 "초안"으로만 취급되어, 이번 문의를 처리하는
+    담당자가 검토를 거쳐야 확정된다.
     """
     submission = _fetch_submission(submission_id)
 
@@ -69,9 +81,46 @@ def _process_from_submission(inquiry_id: str, submission_id: str) -> dict:
         "classification": classification,
         "rule_flags": rule_flags,
     }
-    state.update(retrieve_node(state))
-    state.update(generate_node(state))
+
+    cached_answer = lookup_answer_cache_entry(submission.raw_text) if use_answer_cache is not False else None
+
+    if cached_answer is not None:
+        state["retrieved_docs"] = [
+            {
+                "content": "이 출처는 과거 승인된 답변을 작성할 때 근거로 쓰인 자료입니다 "
+                "(원문 내용은 별도로 보관되어 있지 않습니다).",
+                "source": source,
+                "score": cached_answer["score"],
+            }
+            for source in cached_answer["sources"]
+        ]
+        state["draft_answer"] = cached_answer["final_answer"]
+        state["sources"] = cached_answer["sources"]
+        state["status"] = "pending_review"
+        state["cache_hit"] = True
+    else:
+        state.update(retrieve_node(state))
+        state.update(generate_node(state))
+        state["cache_hit"] = False
+
     return state
+
+
+@router.post("/answer-cache-check", response_model=AnswerCacheCheckResponse)
+def check_answer_cache(payload: AnswerCacheCheckRequest) -> AnswerCacheCheckResponse:
+    """담당자가 'AI 처리 →'를 누르는 시점에, 이 문의와 비슷한 과거 문의에 이미 확정된
+    답변이 있는지 먼저 물어본다. DB에는 아무것도 쓰지 않는다 — 프론트가 이 응답을 보고
+    캐시 답변을 쓸지 물어보는 팝업을 띄운 뒤, 담당자의 선택을 POST /inquiries의
+    use_answer_cache로 그대로 넘긴다."""
+    submission = _fetch_submission(payload.submission_id)
+    cached = lookup_answer_cache_entry(submission.raw_text)
+    if cached is None:
+        return AnswerCacheCheckResponse(cache_hit=False)
+    return AnswerCacheCheckResponse(
+        cache_hit=True,
+        final_answer=cached["final_answer"],
+        sources=cached["sources"],
+    )
 
 
 @router.post("", response_model=InquiryResponse)
@@ -100,13 +149,16 @@ def create_inquiry(payload: InquiryRequest) -> InquiryResponse:
             trace_name="process-inquiry",
         ):
             if payload.submission_id:
-                final_state = _process_from_submission(inquiry_id, payload.submission_id)
+                final_state = _process_from_submission(
+                    inquiry_id, payload.submission_id, payload.use_answer_cache
+                )
             else:
                 final_state = get_compiled_graph().invoke(
                     {
                         "inquiry_id": inquiry_id,
                         "raw_text": payload.text,
                         "skip_relevance_check": payload.skip_relevance_check,
+                        "is_test": payload.is_test,
                     },
                     config={"callbacks": [get_langfuse_handler()]},
                 )

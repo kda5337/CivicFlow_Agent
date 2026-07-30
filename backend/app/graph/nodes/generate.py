@@ -18,24 +18,16 @@ def _format_context(retrieved_docs: list[dict]) -> str:
 
 
 def _friendly_source_label(source: str) -> str:
+    # retrieve.py의 _fetch_faq_row가 대부분의 테이블(부서별 생성 FAQ, PDF 유래
+    # coupang_faq/duty_free_faq)은 이미 "부서명/파일명 N번 질문" 형태로 조립해서 내려주므로
+    # 여기서 다시 예쁘게 바꿀 필요가 없다 — 이 매핑은 그 조립이 실패했을 때(예: source_pdf_file/
+    # source_url이 둘 다 없어 fallback_source="테이블명:id" 그대로 내려온 경우)의 최후 수단이다.
     if source in _SOURCE_LABELS:
         return _SOURCE_LABELS[source]
     if source.startswith("coupang_faq:"):
         return "쿠팡 고객센터 자주묻는 질문"
     if source.startswith("duty_free_faq:"):
         return "제주관광공사 온라인면세점 자주묻는 질문"
-    if source.startswith("it_support_faq:"):
-        return "IT지원팀 자주묻는 질문"
-    if source.startswith("marketing_promotion_faq:"):
-        return "마케팅팀 자주묻는 질문"
-    if source.startswith("admin_team_faq:"):
-        return "행정팀 자주묻는 질문"
-    if source.startswith("safety_team_faq:"):
-        return "안전관리팀 자주묻는 질문"
-    if source.startswith("legal_team_faq:"):
-        return "법무팀 자주묻는 질문"
-    if source.startswith("sensitive_complaint_faq:"):
-        return "고객지원총괄팀 자주묻는 질문"
     return source
 
 

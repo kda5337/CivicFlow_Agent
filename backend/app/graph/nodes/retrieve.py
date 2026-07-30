@@ -17,6 +17,18 @@ _PDF_STYLE_TABLES = {
     "coupang_faq_order_payment",
 }
 
+# 부서별로 생성된 FAQ 테이블들 — 컬럼 구성이 동일하고(id/source_index 또는 source_id/
+# question/answer/source/department), "부서명 자주묻는 질문 N번" 형태로 출처를 조립하는
+# 로직을 그대로 공유한다. (department, index_column) 형태.
+_DEPARTMENT_FAQ_TABLES = {
+    "it_support_faq": ("IT지원팀", "source_index"),
+    "marketing_promotion_faq": ("마케팅팀", "source_id"),
+    "admin_team_faq": ("행정팀", "source_index"),
+    "legal_team_faq": ("법무팀", "source_index"),
+    "sensitive_complaint_faq": ("고객지원총괄팀", "source_index"),
+    "safety_team_faq": ("안전관리팀", "source_index"),
+}
+
 
 def _fetch_faq_row(cur, source_table: str, supabase_id) -> dict:
     """FAQ 테이블에서 답변과 출처 표시용 라벨을 함께 조회한다.
@@ -24,9 +36,23 @@ def _fetch_faq_row(cur, source_table: str, supabase_id) -> dict:
     coupang_faq/coupang_faq_personal_info는 PDF에서 온 항목이면 "파일명 N번 질문"으로,
     PDF에 없는 항목(예: return_policy.json 유래)이면 원본 source_url로 출처를 보여준다.
     duty_free_faq는 "공공데이터포털(데이터셋번호) 데이터셋명 - 자주묻는질문타입 N번째 질문"
-    형태로, 어느 공공데이터의 어떤 정보인지 보여준다.
+    형태로, 어느 공공데이터의 어떤 정보인지 보여준다. 부서별 생성 FAQ 테이블들은
+    "부서명 자주묻는 질문 N번"으로, 몇 번째 질문에서 온 답변인지 보여준다.
     """
     fallback_source = f"{source_table}:{supabase_id}"
+
+    if source_table in _DEPARTMENT_FAQ_TABLES:
+        department, index_column = _DEPARTMENT_FAQ_TABLES[source_table]
+        cur.execute(
+            f"SELECT answer, {index_column} FROM {source_table} WHERE id = %s",
+            (supabase_id,),
+        )
+        row = cur.fetchone()
+        if not row:
+            return {"answer": None, "source": fallback_source}
+        answer, index = row
+        source = f"{department} 자주묻는 질문 {index}번" if index is not None else f"{department} 자주묻는 질문"
+        return {"answer": answer, "source": source}
 
     if source_table in _PDF_STYLE_TABLES:
         cur.execute(

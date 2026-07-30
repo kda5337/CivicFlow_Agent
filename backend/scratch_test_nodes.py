@@ -6,7 +6,7 @@ load_dotenv()
 from app.graph.build import get_compiled_graph
 from app.graph.nodes.classify import classify_node
 from app.graph.nodes.intake import intake_node
-from app.graph.nodes.intake_reply import greet_node, reject_node
+from app.graph.nodes.intake_reply import reject_node
 
 
 def trace_graph(text: str) -> dict:
@@ -36,12 +36,6 @@ intake_result = intake_node(state)
 print(intake_result)
 
 state.update(intake_result)
-
-print("\n=== greet_node ===")
-greet_result = greet_node(state)
-print(greet_result)
-
-state.update(greet_result)
 
 print("\n=== classify_node ===")
 classify_result = classify_node(state)

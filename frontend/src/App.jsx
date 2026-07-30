@@ -1,6 +1,7 @@
 import Sidebar from './components/Sidebar.jsx'
 import Topbar from './components/Topbar.jsx'
 import Pipeline from './components/Pipeline.jsx'
+import AnswerCacheDialog from './components/AnswerCacheDialog.jsx'
 import { ExternalLinkIcon } from './components/icons.jsx'
 import DashboardView from './views/DashboardView.jsx'
 import SubmissionsListView from './views/SubmissionsListView.jsx'
@@ -10,6 +11,7 @@ import RagView from './views/RagView.jsx'
 import DraftView from './views/DraftView.jsx'
 import ReviewView from './views/ReviewView.jsx'
 import KnowledgeBaseView from './views/KnowledgeBaseView.jsx'
+import TestIntakeView from './views/TestIntakeView.jsx'
 import PublicSubmitView from './views/PublicSubmitView.jsx'
 import StaffView from './views/StaffView.jsx'
 import { useInquiryPipeline } from './useInquiryPipeline.js'
@@ -36,7 +38,12 @@ function App() {
     docRegenerateError,
     linkedSubmissionId,
     reviewText,
+    pendingCacheDecision,
+    isBlankDraft,
     runInquiry,
+    handleProcessClick,
+    resolveCacheDecision,
+    dismissCacheDecision,
     handleRegenerate,
     goToNext,
     goToPrev,
@@ -44,6 +51,7 @@ function App() {
     handleProceedToReview,
     handleFinalizeAnswer,
     handleGenerateFromDocs,
+    handleStartBlankDraft,
   } = useInquiryPipeline('dashboard')
 
   if (IS_PUBLIC_SUBMIT_ROUTE) {
@@ -56,6 +64,11 @@ function App() {
 
   return (
     <div className="app">
+      <AnswerCacheDialog
+        pending={pendingCacheDecision}
+        onResolve={resolveCacheDecision}
+        onClose={dismissCacheDecision}
+      />
       <Sidebar
         activeView={activeView}
         onNavigate={setActiveView}
@@ -81,7 +94,7 @@ function App() {
           {activeView === 'dashboard' && <DashboardView />}
           {activeView === 'submissions' && (
             <SubmissionsListView
-              onProcess={runInquiry}
+              onProcess={handleProcessClick}
               loading={loading}
               processingSubmissionId={processingSubmissionId}
               processError={error}
@@ -92,6 +105,7 @@ function App() {
             <AnalysisView
               result={result}
               onNext={goToNext}
+              onBackToSubmissions={() => setActiveView('submissions')}
               onDepartmentChange={handleDepartmentChange}
               originalDepartment={originalDepartment}
               departmentOverridden={departmentOverridden}
@@ -106,6 +120,7 @@ function App() {
               generating={docRegenerating}
               generateError={docRegenerateError}
               currentSourceDocs={answerSourceDocs}
+              onStartBlankDraft={handleStartBlankDraft}
             />
           )}
           {activeView === 'draft' && (
@@ -117,6 +132,7 @@ function App() {
               answerSourceDocs={answerSourceDocs}
               sources={answerSources}
               onProceedToReview={handleProceedToReview}
+              isBlankDraft={isBlankDraft}
             />
           )}
           {activeView === 'review' && (
@@ -127,9 +143,17 @@ function App() {
               onPrev={goToPrev}
               onFinalize={handleFinalizeAnswer}
               isLinkedToSubmission={Boolean(linkedSubmissionId)}
+              onTestComplete={() => setActiveView('submissions')}
             />
           )}
           {activeView === 'kb' && <KnowledgeBaseView />}
+          {activeView === 'test' && (
+            <TestIntakeView
+              onSubmit={(text) => runInquiry(text, null, { isTest: true })}
+              loading={loading}
+              error={error}
+            />
+          )}
         </div>
       </div>
     </div>

@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import { priorityBadgeClass } from '../priorityBadge.js'
 
 // 파이프라인의 마지막 단계. 답변 초안 편집에서 담당자가 다 고친 텍스트(reviewText)를
@@ -7,10 +7,20 @@ import { priorityBadgeClass } from '../priorityBadge.js'
 // (isLinkedToSubmission) PATCH /submissions/{id}/answer로 citizen_submissions에 실제
 // 반영되어 사용자의 "답변 확인" 탭에 그대로 뜬다. 담당자가 '문의 접수'에서 직접 입력한
 // 문의는 연결된 접수 건이 없어 등록해도 서버에 남지 않는다는 점을 화면에 그대로 알린다.
-export default function ReviewView({ result, reviewText, sources, onPrev, onFinalize, isLinkedToSubmission }) {
+//
+// onTestComplete가 있으면(관리자 테스트 섹션에서 온 흐름) 등록 완료 표시를 잠깐 보여준
+// 뒤 자동으로 문의 접수함으로 돌아간다 — 테스트는 어차피 서버에 안 남으므로, 이 화면에
+// 계속 머무를 이유가 없다.
+export default function ReviewView({ result, reviewText, sources, onPrev, onFinalize, isLinkedToSubmission, onTestComplete }) {
   const [registering, setRegistering] = useState(false)
   const [registered, setRegistered] = useState(false)
   const [error, setError] = useState(null)
+
+  useEffect(() => {
+    if (!registered || isLinkedToSubmission || !onTestComplete) return
+    const timer = setTimeout(onTestComplete, 1500)
+    return () => clearTimeout(timer)
+  }, [registered, isLinkedToSubmission, onTestComplete])
 
   if (!result) {
     return (
@@ -89,7 +99,9 @@ export default function ReviewView({ result, reviewText, sources, onPrev, onFina
             <span style={{ fontSize: 15, color: 'var(--text)', fontWeight: 500 }}>
               {isLinkedToSubmission
                 ? '사용자 문의 접수 건에 최종 답변이 저장됐습니다 (사용자의 "답변 확인" 탭에 표시됨).'
-                : '이 문의는 사용자 접수 건과 연결되지 않아 서버에는 저장되지 않았습니다.'}
+                : onTestComplete
+                  ? '테스트 실행이라 서버에는 저장되지 않았습니다. 잠시 후 문의 접수함으로 이동합니다...'
+                  : '이 문의는 사용자 접수 건과 연결되지 않아 서버에는 저장되지 않았습니다.'}
             </span>
           </div>
         ) : (

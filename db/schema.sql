@@ -28,7 +28,23 @@ CREATE TABLE citizen_submissions (
     classification_reason TEXT,      -- 분류근거 (classify_node의 LLM 분류 근거)
     requires_manager_review BOOLEAN NOT NULL DEFAULT false,  -- rule_flags.requires_manager_review (9절 민감 민원)
     matched_rules TEXT[],             -- rule_flags.matched_rules (규칙 엔진 매칭 경로)
-    final_answer TEXT                -- 담당자가 확정해 저장한 답변 (확정 전엔 NULL)
+    final_answer TEXT,               -- 담당자가 확정해 저장한 답변 (확정 전엔 NULL)
+    sources TEXT[],                  -- final_answer의 근거 출처 라벨 목록 (확정 전엔 NULL/빈 배열)
+    from_cache BOOLEAN NOT NULL DEFAULT false  -- query_cache 히트(유사도 0.90 이상)로 분류를 재사용했는지 여부
+);
+
+-- 담당자가 검토·확정한 최종 답변을 재사용하기 위한 전용 캐시 테이블.
+-- citizen_submissions와 독립적이다 — 실제 문의에서 확정된 답변(submission_id가 채워짐)뿐
+-- 아니라, seed_query_cache.py 같은 스크립트로 미리 심어둔 예시 문답(submission_id가 NULL)도
+-- 같은 방식으로 담을 수 있다. raw_text 임베딩은 Chroma(answer_cache 컬렉션)에 두고,
+-- 이 테이블의 id를 metadata.cache_id로 남겨 검색된 질문에서 실제 답변을 다시 조회한다.
+CREATE TABLE answer_cache (
+    id UUID PRIMARY KEY,
+    raw_text TEXT NOT NULL,
+    final_answer TEXT NOT NULL,
+    sources TEXT[],
+    submission_id UUID REFERENCES citizen_submissions(id),  -- 유래한 확정 문의 (seed 데이터는 NULL)
+    created_at TIMESTAMPTZ NOT NULL DEFAULT now()
 );
 
 CREATE TABLE departments (

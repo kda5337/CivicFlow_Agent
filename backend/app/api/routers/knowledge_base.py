@@ -1,6 +1,7 @@
 from fastapi import APIRouter, HTTPException
 
-from app.models.schemas import KnowledgeBaseItem, KnowledgeBaseItemWrite, KnowledgeBaseSource
+from app.models.schemas import AnswerCacheItem, KnowledgeBaseItem, KnowledgeBaseItemWrite, KnowledgeBaseSource
+from app.rag.answer_cache import delete_answer_cache_entry, list_answer_cache_entries
 from app.rag.knowledge_base import (
     FAQ_TABLES,
     KnowledgeBaseItemNotFound,
@@ -66,3 +67,20 @@ def reprocess(table: str) -> KnowledgeBaseSource:
     """한 출처의 기존 임베딩을 지우고 Supabase 현재 데이터로 다시 만든다."""
     _check_table(table)
     return reprocess_source(table)
+
+
+# 아래 두 엔드포인트는 위의 FAQ 출처(RAG 근거 문서)들과는 별개다 — answer_cache는
+# question/answer/source 컬럼 구성도 다르고 chroma_merged_faq가 아닌 별도 컬렉션에
+# 임베딩되므로, FAQ_TABLES 화이트리스트나 create_item/update_item 등 공용 CRUD를
+# 그대로 재사용할 수 없다. 지식베이스 관리 화면에 "답변 캐시" 섹션으로 별도 표시된다.
+@router.get("/answer-cache", response_model=list[AnswerCacheItem])
+def list_answer_cache() -> list[AnswerCacheItem]:
+    """답변 캐시 섹션: 담당자가 검토·확정해 재사용 가능하게 등록된 답변 전체 목록."""
+    return list_answer_cache_entries()
+
+
+@router.delete("/answer-cache/{cache_id}", status_code=204)
+def remove_answer_cache_entry(cache_id: str) -> None:
+    """캐시 항목을 지운다 — 이후 비슷한 문의가 와도 이 답변은 더 이상 재사용되지 않는다."""
+    if not delete_answer_cache_entry(cache_id):
+        raise HTTPException(status_code=404, detail="답변 캐시 항목을 찾을 수 없습니다")

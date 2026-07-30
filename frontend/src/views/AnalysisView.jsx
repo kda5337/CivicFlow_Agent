@@ -20,6 +20,7 @@ const DEPARTMENTS_URL = 'http://localhost:8000/departments'
 export default function AnalysisView({
   result,
   onNext,
+  onBackToSubmissions,
   onDepartmentChange,
   originalDepartment,
   departmentOverridden,
@@ -187,6 +188,11 @@ export default function AnalysisView({
       </div>
 
       <div className="form-actions">
+        {onBackToSubmissions && (
+          <button className="btn btn-ghost" type="button" onClick={onBackToSubmissions}>
+            ← 문의 접수함으로
+          </button>
+        )}
         <button
           className="btn btn-primary"
           type="button"

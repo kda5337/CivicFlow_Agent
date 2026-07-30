@@ -40,6 +40,19 @@ function saveSeenAnswerIds(name, ids) {
   localStorage.setItem(SEEN_ANSWERS_KEY_PREFIX + name, JSON.stringify([...ids]))
 }
 
+const sleep = (ms) => new Promise((resolve) => setTimeout(resolve, ms))
+
+// 캐시로 처리돼도 화면 단계(적절성 확인 중 -> 분류 중)는 그대로 다 보여준다 — 다만 그
+// 뒤에 있는 실제 작업이 LLM 호출 없이 캐시 조회만이라 순식간에 끝나버리면 화면이
+// 깜빡이듯 지나가 버린다. 최소 시간만큼은 그 화면에 머무르도록 보장해, 사용자에게는
+// 여전히 "확인 -> 분류 -> 접수 완료"가 순서대로 진행되는 것처럼 보이게 한다.
+const CACHE_STEP_MIN_MS = 600
+
+async function withMinDelay(promise, ms) {
+  const [result] = await Promise.all([promise, sleep(ms)])
+  return result
+}
+
 const T = {
   navy900: "#0E1826",
   navy700: "#1D2E48",
@@ -252,14 +265,27 @@ function RegisterTab({ visitorName, onSubmitted }) {
   // 오류(error)와 구분해서, 재작성을 유도하는 안내로 보여준다.
   const [rejection, setRejection] = useState("")
   const [result, setResult] = useState(null)
-  // 등록 버튼을 누른 뒤의 단계: form(작성) -> checking(적절성 검사 중)
-  // -> ok(적절함이 확인되어 체크 표시) -> result(분류 결과 표시).
-  // checking/ok/result는 실제로는 서버가 한 번의 요청으로 다 처리하지만, 사용자에게는
-  // "적절성부터 확인하고, 그다음에 분류한다"는 순서를 그대로 보여주기 위해 단계를 나눈다.
+  // 등록 버튼을 누른 뒤의 단계: form(작성) -> checking(적절성 검사 중, 실제로
+  // POST /submissions/check-relevance가 도는 중) -> ok(적절함이 확인되어 체크 표시,
+  // 잠깐 보여주는 연출) -> classifying(분류·저장 중, 실제로 POST /submissions가 도는
+  // 중) -> result(분류 결과 표시). checking과 classifying은 각각 별도의 요청 하나에
+  // 대응해서, 화면이 실제 백엔드 진행 상황과 같은 순서로 넘어간다.
   const [phase, setPhase] = useState("form")
   const okTimerRef = useRef(null)
+  // 단계 전환 타이머가 끝난 뒤 컴포넌트가 이미 unmount됐으면(다른 탭으로 이동 등)
+  // setState를 호출하지 않기 위한 가드.
+  const unmountedRef = useRef(false)
 
-  useEffect(() => () => clearTimeout(okTimerRef.current), [])
+  useEffect(() => {
+    // StrictMode가 개발 모드에서 마운트 -> 정리 -> 재마운트를 한 번 시뮬레이션하는데,
+    // 이때 아래 cleanup만 있으면 재마운트 후에도 true로 남아 그 뒤 모든 요청이
+    // 조용히 무시된다 — 그래서 마운트될 때마다 false로 되돌려준다.
+    unmountedRef.current = false
+    return () => {
+      unmountedRef.current = true
+      clearTimeout(okTimerRef.current)
+    }
+  }, [])
 
   const handleSubmit = async () => {
     if (!content.trim() || !contact.trim()) {
@@ -273,30 +299,76 @@ function RegisterTab({ visitorName, onSubmitted }) {
     setError("")
     setRejection("")
     setPhase("checking")
+    const rawText = title.trim() ? `${title.trim()}\n\n${content.trim()}` : content.trim()
     try {
-      const rawText = title.trim() ? `${title.trim()}\n\n${content.trim()}` : content.trim()
-      const response = await fetch(SUBMIT_URL, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ name: visitorName, contact: contact.trim(), raw_text: rawText }),
-      })
-      if (response.status === 422) {
-        const body = await response.json().catch(() => ({}))
-        setRejection(body.detail || "민원·문의 내용으로 확인되지 않았습니다.")
-        setPhase("form")
-        return
+      // 캐시 히트 여부를 먼저 조용히 확인한다 — DB에는 아무것도 안 쓰고, 이 결과에
+      // 따라 실제 관련성 판별(LLM 호출)을 할지 건너뛸지만 정한다. "적절성 확인 중"
+      // 화면 자체는 히트/미스와 무관하게 그대로 보여준다(최소 노출 시간만 보장).
+      const cacheCheckResponse = await withMinDelay(
+        fetch(`${SUBMIT_URL}/cache-check`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ raw_text: rawText }),
+        }),
+        CACHE_STEP_MIN_MS
+      )
+      const cacheHit = cacheCheckResponse.ok && (await cacheCheckResponse.json()).cache_hit
+      if (unmountedRef.current) return
+
+      if (!cacheHit) {
+        const relevanceResponse = await fetch(`${SUBMIT_URL}/check-relevance`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ raw_text: rawText }),
+        })
+        if (!relevanceResponse.ok) throw new Error(`${relevanceResponse.status} ${relevanceResponse.statusText}`)
+        const relevance = await relevanceResponse.json()
+        if (unmountedRef.current) return
+
+        if (!relevance.관련여부) {
+          setRejection(relevance.판단근거 || "민원·문의 내용으로 확인되지 않았습니다.")
+          setPhase("form")
+          return
+        }
       }
-      if (!response.ok) throw new Error(`${response.status} ${response.statusText}`)
-      const json = await response.json()
-      setResult(json)
-      setTitle("")
-      setContent("")
-      setContact("")
-      onSubmitted()
-      // "적절함" 확인을 사용자가 눈으로 볼 수 있게 잠깐 보여준 뒤 분류 결과로 넘어간다.
+
+      // "적절함" 확인을 사용자가 눈으로 볼 수 있게 잠깐 보여준 뒤 분류 단계로 넘어간다.
       setPhase("ok")
-      okTimerRef.current = setTimeout(() => setPhase("result"), 900)
+      okTimerRef.current = setTimeout(async () => {
+        if (unmountedRef.current) return
+        setPhase("classifying")
+        try {
+          const submitRequest = fetch(SUBMIT_URL, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+              name: visitorName,
+              contact: contact.trim(),
+              raw_text: rawText,
+              skip_relevance_check: true,
+            }),
+          })
+          // 캐시 히트면 분류도 순식간에 끝나 화면이 깜빡이므로, 여기서도 최소 노출
+          // 시간을 보장한다. 미스면 실제 분류 LLM 호출이 자체적으로 시간이 걸리니
+          // 별도 지연이 필요 없다.
+          const response = cacheHit ? await withMinDelay(submitRequest, CACHE_STEP_MIN_MS) : await submitRequest
+          if (!response.ok) throw new Error(`${response.status} ${response.statusText}`)
+          const json = await response.json()
+          if (unmountedRef.current) return
+          setResult(json)
+          setTitle("")
+          setContent("")
+          setContact("")
+          onSubmitted()
+          setPhase("result")
+        } catch (err) {
+          if (unmountedRef.current) return
+          setError(`접수 실패: ${err.message}`)
+          setPhase("form")
+        }
+      }, 900)
     } catch (err) {
+      if (unmountedRef.current) return
       setError(`접수 실패: ${err.message}`)
       setPhase("form")
     }
@@ -396,7 +468,25 @@ function RegisterTab({ visitorName, onSubmitted }) {
               <CheckCircle2 size={28} strokeWidth={2.2} />
             </div>
             <div style={{ fontSize: 15, fontWeight: 500, color: T.ink }}>민원·문의로 확인되었습니다</div>
-            <div style={{ fontSize: 12.5, color: T.sub }}>분류 결과를 준비하고 있습니다...</div>
+            <div style={{ fontSize: 12.5, color: T.sub }}>이어서 문의 유형을 분류합니다...</div>
+          </div>
+        )}
+
+        {phase === "classifying" && (
+          <div style={{ ...card, display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", gap: 16, padding: "56px 20px" }}>
+            <div style={{ display: "flex", gap: 8 }}>
+              {[0, 1, 2].map((i) => (
+                <div
+                  key={i}
+                  style={{
+                    width: 12, height: 12, borderRadius: "50%", background: T.teal,
+                    animation: "cf-bounce 1s ease-in-out infinite", animationDelay: `${i * 0.15}s`,
+                  }}
+                />
+              ))}
+            </div>
+            <div style={{ fontSize: 14.5, fontWeight: 500, color: T.ink }}>문의 유형을 분류하고 있습니다...</div>
+            <div style={{ fontSize: 12.5, color: T.sub }}>담당 부서를 확인하고 있어요.</div>
           </div>
         )}
 
@@ -694,8 +784,12 @@ export default function PublicSubmitView() {
           outline: 2px solid ${T.teal}; outline-offset: 2px;
         }
         @keyframes cf-spin { to { transform: rotate(360deg); } }
+        @keyframes cf-bounce {
+          0%, 80%, 100% { transform: scale(0.6); opacity: 0.4; }
+          40% { transform: scale(1); opacity: 1; }
+        }
         @media (prefers-reduced-motion: reduce) {
-          *[style*="cf-spin"] { animation: none !important; }
+          *[style*="cf-spin"], *[style*="cf-bounce"] { animation: none !important; }
         }
         @media (max-width: 760px) {
           .cf-shell { flex-direction: column !important; }

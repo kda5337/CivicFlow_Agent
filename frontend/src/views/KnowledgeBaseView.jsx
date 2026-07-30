@@ -1,6 +1,7 @@
 import { Fragment, useEffect, useState } from 'react'
 
 const KNOWLEDGE_BASE_URL = 'http://localhost:8000/knowledge-base'
+const ANSWER_CACHE_URL = `${KNOWLEDGE_BASE_URL}/answer-cache`
 
 const inputStyle = {
   width: '100%',
@@ -20,6 +21,11 @@ const inputStyle = {
 // 각 변경은 테이블 전체가 아니라 그 항목 하나만 Chroma에 반영한다(백엔드
 // create_item/update_item/delete_item 참고) — 원본 데이터셋 자체의 수집은 여전히
 // ingest_*.py 스크립트가 담당한다.
+//
+// 아래쪽 '답변 캐시' 섹션은 위 FAQ 출처들과 완전히 별개다 — RAG 근거 문서가 아니라
+// answer_cache(GET/DELETE /knowledge-base/answer-cache)를 그대로 보여준다. 담당자가
+// 검토·확정한 답변을 비슷한 문의에 재사용하기 위한 캐시라, 여기서는 추가/수정 없이
+// 목록 확인과 삭제(=이후 재사용 중단)만 지원한다.
 export default function KnowledgeBaseView() {
   const [sources, setSources] = useState(null)
   const [error, setError] = useState(null)
@@ -39,6 +45,25 @@ export default function KnowledgeBaseView() {
   const [savingKey, setSavingKey] = useState(null)
   const [itemActionError, setItemActionError] = useState(null)
 
+  // '답변 캐시' 섹션 — RAG 근거 문서(위 표)와는 별개로, 담당자가 검토·확정한 답변을
+  // 비슷한 문의에 재사용하기 위한 answer_cache 테이블을 그대로 보여준다.
+  const [answerCache, setAnswerCache] = useState(null)
+  const [answerCacheError, setAnswerCacheError] = useState(null)
+  const [expandedCacheId, setExpandedCacheId] = useState(null)
+  const [deletingCacheId, setDeletingCacheId] = useState(null)
+
+  const loadAnswerCache = () => {
+    setAnswerCacheError(null)
+    fetch(ANSWER_CACHE_URL)
+      .then((response) => {
+        if (!response.ok) throw new Error(`${response.status} ${response.statusText}`)
+        return response.json()
+      })
+      .then(setAnswerCache)
+      .catch((err) => setAnswerCacheError(err.message))
+    setExpandedCacheId(null)
+  }
+
   const load = () => {
     setError(null)
     fetch(KNOWLEDGE_BASE_URL)
@@ -51,11 +76,28 @@ export default function KnowledgeBaseView() {
     setExpandedTable(null)
     setItemsByTable({})
     setEditing(null)
+    loadAnswerCache()
   }
 
   useEffect(() => {
     load()
   }, [])
+
+  const handleDeleteCacheEntry = async (id) => {
+    if (!window.confirm('이 캐시 항목을 삭제하시겠습니까? 되돌릴 수 없습니다.')) return
+    setDeletingCacheId(id)
+    setAnswerCacheError(null)
+    try {
+      const response = await fetch(`${ANSWER_CACHE_URL}/${id}`, { method: 'DELETE' })
+      if (!response.ok) throw new Error(`${response.status} ${response.statusText}`)
+      setAnswerCache((prev) => (prev || []).filter((item) => item.id !== id))
+      if (expandedCacheId === id) setExpandedCacheId(null)
+    } catch (err) {
+      setAnswerCacheError(err.message)
+    } finally {
+      setDeletingCacheId(null)
+    }
+  }
 
   const handleReprocess = async (table) => {
     setReprocessingTable(table)
@@ -449,6 +491,96 @@ export default function KnowledgeBaseView() {
               })}
             </tbody>
           </table>
+        )}
+      </div>
+
+      <div className="card" style={{ marginTop: 24 }}>
+        <h2 className="section-title" style={{ margin: '0 0 12px' }}>
+          답변 캐시 {answerCache ? `(${answerCache.length}건)` : ''}
+        </h2>
+        <p style={{ fontSize: 12.5, color: 'var(--text-dim)', marginTop: -8, marginBottom: 16 }}>
+          담당자가 검토·확정한 답변 중, 비슷한 문의가 다시 들어오면 "AI 처리" 시 답변 생성을 대신해
+          재사용되는 항목입니다. 위의 RAG 근거 문서 출처와는 별개이며, 실제 확정 문의에서 온 항목은
+          "실제 문의" 표시가 붙습니다.
+        </p>
+
+        {answerCacheError && (
+          <div className="error-banner">목록을 불러오지 못했습니다: {answerCacheError}</div>
+        )}
+
+        {answerCache && answerCache.length === 0 && (
+          <div className="empty-state">아직 등록된 답변 캐시가 없습니다.</div>
+        )}
+
+        {answerCache && answerCache.length > 0 && (
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 10, maxHeight: 460, overflowY: 'auto' }}>
+            {answerCache.map((item) => {
+              const isOpen = expandedCacheId === item.id
+              return (
+                <div key={item.id} style={{ border: '1px solid var(--line)', borderRadius: 9, padding: 12 }}>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', gap: 12, alignItems: 'flex-start' }}>
+                    <button
+                      className="btn btn-ghost"
+                      style={{
+                        padding: 0,
+                        border: 'none',
+                        background: 'none',
+                        textAlign: 'left',
+                        fontSize: 13.5,
+                        fontWeight: 700,
+                        cursor: 'pointer',
+                      }}
+                      type="button"
+                      onClick={() => setExpandedCacheId(isOpen ? null : item.id)}
+                    >
+                      {isOpen ? '▾' : '▸'} Q. {item.raw_text}
+                    </button>
+                    <div style={{ display: 'flex', gap: 8, flexShrink: 0, alignItems: 'center' }}>
+                      {item.submission_id ? (
+                        <span className="badge low">실제 문의</span>
+                      ) : (
+                        <span className="badge" style={{ background: 'var(--bg)', color: 'var(--text-dim)' }}>
+                          시드 데이터
+                        </span>
+                      )}
+                      <button
+                        className="btn btn-ghost"
+                        style={{ padding: '4px 10px', fontSize: 12, color: 'var(--red)' }}
+                        type="button"
+                        disabled={deletingCacheId === item.id}
+                        onClick={() => handleDeleteCacheEntry(item.id)}
+                      >
+                        {deletingCacheId === item.id ? '삭제 중...' : '삭제'}
+                      </button>
+                    </div>
+                  </div>
+                  {isOpen && (
+                    <div style={{ marginTop: 10, paddingTop: 10, borderTop: '1px solid var(--line)' }}>
+                      <div
+                        style={{
+                          fontSize: 13,
+                          color: 'var(--text-dim)',
+                          whiteSpace: 'pre-wrap',
+                          lineHeight: 1.6,
+                          marginBottom: 8,
+                        }}
+                      >
+                        A. {item.final_answer}
+                      </div>
+                      {item.sources.length > 0 && (
+                        <div style={{ fontSize: 12, color: 'var(--text-dim)' }}>
+                          출처: {item.sources.join(', ')}
+                        </div>
+                      )}
+                      <div className="doc-meta" style={{ fontFamily: 'var(--mono)', marginTop: 6 }}>
+                        {new Date(item.created_at).toLocaleString('ko-KR')}
+                      </div>
+                    </div>
+                  )}
+                </div>
+              )
+            })}
+          </div>
         )}
       </div>
     </div>

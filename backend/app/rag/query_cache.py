@@ -19,10 +19,13 @@ QUERY_CACHE_COLLECTION_NAME = "query_cache"
 CACHE_SIMILARITY_THRESHOLD = 0.80
 
 
-def lookup_cache_entry(raw_text: str) -> dict | None:
+def lookup_cache_entry(raw_text: str, threshold: float = CACHE_SIMILARITY_THRESHOLD) -> dict | None:
     """raw_text와 가장 유사한 캐시 항목을 찾아 파이프라인 최종 결과 형태로 돌려준다.
 
     임계값 미만이거나 컬렉션이 비어있으면 None을 반환해 기존 파이프라인으로 넘어가게 한다.
+    threshold를 지정하지 않으면 기본값(CACHE_SIMILARITY_THRESHOLD)을 쓴다 — 호출하는 쪽마다
+    재사용을 더/덜 보수적으로 하고 싶을 때 개별적으로 올려 쓸 수 있게 하기 위함이다
+    (예: 시민 접수 경로는 0.90으로 더 엄격하게 요구).
     """
     vectorstore = get_vectorstore(QUERY_CACHE_COLLECTION_NAME)
     results = vectorstore.similarity_search_with_relevance_scores(raw_text, k=1)
@@ -30,7 +33,7 @@ def lookup_cache_entry(raw_text: str) -> dict | None:
         return None
 
     doc, score = results[0]
-    if score < CACHE_SIMILARITY_THRESHOLD:
+    if score < threshold:
         return None
 
     meta = doc.metadata
