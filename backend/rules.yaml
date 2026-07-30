@@ -1,0 +1,200 @@
+# 9절 Rule 적용표 - 범용 민원처리 스키마.
+# 담당부서/우선순위는 LLM(classify_node)이 정하지 않는다 — 이 파일이 전담해서 결정한다.
+#
+# - applies_to: 이 규칙이 적용될 문의유형 목록. 생략하면 모든 문의유형에 횡단 적용된다.
+#   (담당부서 규칙은 문의유형에 종속되어야 하므로 반드시 지정하고,
+#    우선순위 규칙은 문의유형과 무관하게 항상 감지되어야 하므로 생략한다.)
+
+# - keywords: raw_text에 대해 부분일치로 검사한다. 생략하거나 빈 리스트면 항상 매칭으로
+#   간주한다 — 문의유형별 기본값(fallback)을 만들 때 이렇게 쓴다.
+
+# - priority: 여러 규칙이 동시에 매칭됐을 때 승자를 가리는 숫자. 높을수록 우선.
+#   담당부서 규칙에서는 항상 이 값으로 순위를 매기고, 우선순위 규칙에서는 명시했을 때만
+#   이 값을 쓰며 생략하면 우선순위 값 자체의 등급(낮음<보통<높음<최상)으로 순위를 매긴다.
+#   fallback 규칙은 priority: -1로 두어 구체적인 규칙이 하나라도 걸리면 항상 밀려난다.
+
+# - data_source: 이 규칙이 결정한 담당부서가 RAG에서 어느 데이터를 참고해야 하는지 표시하는
+#   문서용 태그(result 밖의 필드라 classification에는 안 들어간다. retrieve_node가 아직
+#   담당부서 기준으로 검색을 필터링하지 않으므로 지금은 문서화 목적이며, 실제 필터링에
+#   쓰려면 retrieve_node를 이 값 기준으로 확장해야 한다). null이면 아직 참고할 데이터가
+#   없거나(공백), 즉시 관리자 검토로 넘어가 RAG 자체가 필요 없는 경우다.
+rules:
+  # ── 담당부서 규칙: 문의유형별 구체적 키워드 규칙 (9개) ──────────
+  - name: IT장애_분류
+    applies_to: ["오류/장애"]
+    priority: 1
+    keywords: ["로그인", "접속불가", "오류", "서버", "먹통", "안 열림"]
+    data_source: it_support_faq  # 생성된 IT지원 FAQ 88건 — 공백 메움
+    result:
+      담당부서: IT지원팀
+
+  - name: 결제_정산_분류
+    applies_to: ["취소/환불"]
+    priority: 1
+    keywords: ["환불", "취소", "반품", "결제오류", "이중결제", "과오납"]
+    data_source: coupang_faq  # 환불/취소/반품 FAQ 65건
+    result:
+      담당부서: 정산팀
+
+  - name: 배송_물류_분류
+    applies_to: ["취소/환불", "안내/조회", "오류/장애"]
+    priority: 1
+    keywords: ["배송", "택배", "미수령", "파손", "오배송"]
+    data_source: coupang_faq_delivery  # 배송 전용 FAQ 82건 (자주묻는질문_배송문의 ep_1~ep_8)
+    result:
+      담당부서: 물류팀
+
+  - name: 신청_행정_분류
+    applies_to: ["신청/등록"]
+    priority: 1
+    keywords: ["신청", "등록", "발급", "서류", "접수"]
+    data_source: admin_team_faq  # 생성된 행정팀 FAQ 126건 — 공백 메움
+    result:
+      담당부서: 행정팀
+
+  - name: 계정_회원_분류
+    applies_to: ["변경/정정", "오류/장애"]
+    priority: 1
+    keywords: ["회원가입", "탈퇴", "비밀번호", "개인정보", "아이디"]
+    data_source: duty_free_faq(개인정보 8건) + coupang_faq_personal_info(40건, 가입/탈퇴·개인정보 설정·인증·비밀번호 관리·로그인)
+    result:
+      담당부서: 회원관리팀
+
+  - name: 법무_분류
+    applies_to: ["취소/환불", "불만/신고"]
+    priority: 10
+    keywords: ["소송", "고발", "약관", "법적조치", "손해배상", "고소", "법적 대응", "소비자보호원"]
+    data_source: legal_team_faq  # 생성된 법무팀 FAQ 105건 — 관리자검토필요 미설정이라 실제로 retrieve_node에서 쓰임
+    result:
+      담당부서: 법무팀
+
+  - name: 안전_사고_분류
+    applies_to: ["불만/신고", "오류/장애"]
+    priority: 10
+    keywords: ["사고", "부상", "화재", "위험", "안전", "고통"]
+    data_source: safety_team_faq  # 생성된 안전관리팀 FAQ 167건(안전수칙/응급처치 + 신고·조사·보상
+                                   # 절차) — retrieve_node는 관리자검토필요 여부와 무관하게 항상
+                                   # 실행되므로(답변 생성만 건너뜀), 이 데이터가 실제로 검색된다.
+    result:
+      담당부서: 안전관리팀
+      관리자검토필요: true
+
+  - name: 마케팅_프로모션_분류
+    applies_to: ["안내/조회", "일반문의"]
+    priority: 1
+    keywords: ["이벤트", "쿠폰", "할인", "프로모션", "광고"]
+    data_source: marketing_promotion_faq  # 생성된 마케팅/프로모션 FAQ 88건 — 공백 메움
+    result:
+      담당부서: 마케팅팀
+
+  - name: 민감민원
+    applies_to: ["불만/신고"]
+    # 담당부서는 여기서 정하지 않는다 — "불만/항의/신고/피해"는 너무 흔한 단어라
+    # 법무_분류/안전_사고_분류처럼 더 구체적인 규칙이 이미 매칭된 뒤에도 priority가
+    # 높다는 이유만으로 담당부서를 가로채는 문제가 실측(test/run_classification_eval.py)
+    # 에서 확인됐다(법무팀 3/5, 안전관리팀 1/5가 고객지원총괄팀으로 잘못 배정됨).
+    # 이 규칙의 역할은 "관리자 즉시 검토 필요" 표시만이고, 담당부서는 다른 규칙(구체
+    # 규칙 또는 fallback)이 정한 값을 그대로 둔다.
+    priority: 20
+    keywords: ["불만", "항의", "신고", "피해"]
+    data_source: null  # retrieve_node는 실행되지만(RAG 자체를 건너뛰지는 않음), 이 규칙
+                        # 전용 데이터는 아직 없음 — sensitive_complaint_faq는 기본_불만신고
+                        # 쪽에 연결돼 있어 겹치는 케이스라면 그쪽 데이터가 검색될 수 있다.
+    result:
+      관리자검토필요: true
+
+  # ── 담당부서 규칙: 문의유형별 기본값(fallback, 7개) ──────────
+  # 위 구체적 규칙이 하나도 안 걸려도 문의유형만 있으면 담당부서가 항상 정해지게 한다.
+  - name: 기본_신청등록
+    applies_to: ["신청/등록"]
+    priority: -1
+    data_source: admin_team_faq  # 신청_행정_분류와 동일 — 공백 메움
+    result:
+      담당부서: 행정팀
+
+  - name: 기본_변경정정
+    applies_to: ["변경/정정"]
+    priority: -1
+    data_source: coupang_faq_personal_info  # 가입/탈퇴·개인정보 설정·인증·비밀번호 관리 40건
+    result:
+      담당부서: 회원관리팀
+
+  - name: 기본_취소환불
+    applies_to: ["취소/환불"]
+    priority: -1
+    data_source: coupang_faq
+    result:
+      담당부서: 정산팀
+
+  - name: 기본_오류장애
+    applies_to: ["오류/장애"]
+    priority: -1
+    data_source: it_support_faq  # IT장애_분류와 동일 — 공백 메움
+    result:
+      담당부서: IT지원팀
+
+  - name: 기본_불만신고
+    applies_to: ["불만/신고"]
+    priority: -1
+    data_source: sensitive_complaint_faq  # 이 규칙 자체엔 관리자검토필요가 없어 실제로 retrieve_node를 탐 — 공백 메움
+    result:
+      담당부서: 고객지원총괄팀
+
+  - name: 기본_안내조회
+    applies_to: ["안내/조회"]
+    priority: -1
+    data_source: chroma_merged_faq  # duty_free_faq 이용방법/개인정보/결제문의/상품문의/스페셜오더 + coupang_faq_order_payment(주문/결제 156건)
+    result:
+      담당부서: 고객센터
+
+  - name: 기본_일반문의
+    applies_to: ["일반문의"]
+    priority: -1
+    data_source: chroma_merged_faq  # coupang_faq 이용정책 등 포괄적 FAQ + coupang_faq_order_payment(주문/결제 156건)
+    result:
+      담당부서: 고객센터
+
+  # ── 우선순위 규칙 (7개, 문의유형 무관 횡단 적용) ──────────
+  - name: 긴급도_최상
+    keywords: ["생명", "위급", "응급", "사고발생"]
+    result:
+      우선순위: 최상
+      관리자검토필요: true
+
+  - name: 긴급도_높음
+    keywords: ["긴급", "오늘", "즉시", "마감임박", "중단"]
+    result:
+      우선순위: 높음
+
+  - name: 반복문의_가중
+    keywords: ["여러 번", "재문의", "다시 문의", "몇 번째"]
+    result:
+      우선순위: 높음
+
+  - name: 법적조치_경고
+    keywords: ["소송", "고발", "언론제보", "공정위"]
+    result:
+      우선순위: 높음
+      관리자검토필요: true
+
+  - name: VIP고객_가중
+    keywords: ["VIP", "우수회원", "장기고객"]
+    result:
+      우선순위: 높음
+
+  - name: 단순조회_낮음
+    keywords: ["그냥 궁금", "참고로", "확인차"]
+    result:
+      우선순위: 낮음
+
+  - name: 정기문의_낮음
+    keywords: ["정기적으로", "매번 여쭤봐요", "루틴하게"]
+    result:
+      우선순위: 낮음
+
+  # ── 우선순위 규칙: 기본값(fallback, 1개) ──────────
+  # 위 규칙이 하나도 안 걸리면 보통으로 채택된다. priority: -1이라 낮음(자동 등급 0)에도 밀린다.
+  - name: 기본_우선순위
+    priority: -1
+    result:
+      우선순위: 보통
