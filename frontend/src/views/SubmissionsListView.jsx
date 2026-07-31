@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react'
 import { statusBadgeClass } from '../statusBadge.js'
+import { priorityBadgeClass, priorityRank } from '../priorityBadge.js'
 import { isDelayed } from '../delay.js'
 import DepartmentFilter, { ALL_DEPARTMENTS } from '../components/DepartmentFilter.jsx'
 import { API_BASE_URL } from '../config.js'
@@ -30,10 +31,10 @@ export default function SubmissionsListView({ onProcess, loading, processingSubm
       })
       // 답변완료 건은 더 이상 처리할 일이 없는 건이라 이 접수함에서는 빼고, "답변 완료함"
       // (AnsweredView)에서만 보이게 한다. 남은 건 중 rules.yaml 9절 민감 민원 규칙에 걸려
-      // 담당자 즉시 검토가 필요한 건(requires_manager_review)을 맨 위로 올리고, 그다음으로
-      // 지연 건(익일 오전 9시 초과 미답변)을 올린다 — 관리자 검토 필요보다는 항상 아래.
-      // 같은 그룹 안에서는 서버가 이미 내려준 최신 접수순을 그대로 유지한다(Array.sort는
-      // 안정 정렬).
+      // 담당자 즉시 검토가 필요한 건(requires_manager_review)을 맨 위로 올리고, 그다음
+      // 지연 건(익일 오전 9시 초과 미답변), 그다음으로 우선순위(최상>높음>보통>낮음)를
+      // 올린다 — 관리자 검토 필요보다는 항상 아래. 같은 그룹 안에서는 서버가 이미 내려준
+      // 최신 접수순을 그대로 유지한다(Array.sort는 안정 정렬).
       .then((data) =>
         setSubmissions(
           data
@@ -41,7 +42,9 @@ export default function SubmissionsListView({ onProcess, loading, processingSubm
             .sort((a, b) => {
               const reviewDiff = Number(b.requires_manager_review) - Number(a.requires_manager_review)
               if (reviewDiff !== 0) return reviewDiff
-              return Number(isDelayed(b.submitted_at)) - Number(isDelayed(a.submitted_at))
+              const delayDiff = Number(isDelayed(b.submitted_at)) - Number(isDelayed(a.submitted_at))
+              if (delayDiff !== 0) return delayDiff
+              return priorityRank(b.priority) - priorityRank(a.priority)
             })
         )
       )
@@ -97,6 +100,7 @@ export default function SubmissionsListView({ onProcess, loading, processingSubm
                 <th>연락처</th>
                 <th>문의 내용</th>
                 <th>자동 분류</th>
+                <th>우선순위</th>
                 <th>상태</th>
                 <th></th>
               </tr>
@@ -140,6 +144,13 @@ export default function SubmissionsListView({ onProcess, loading, processingSubm
                         <br />
                         <span style={{ color: 'var(--text-dim)', fontSize: 11.5 }}>{item.department}</span>
                       </>
+                    ) : (
+                      <span style={{ color: 'var(--text-dim)' }}>-</span>
+                    )}
+                  </td>
+                  <td>
+                    {item.priority ? (
+                      <span className={`badge ${priorityBadgeClass(item.priority)}`}>{item.priority}</span>
                     ) : (
                       <span style={{ color: 'var(--text-dim)' }}>-</span>
                     )}
